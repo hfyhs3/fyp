@@ -4,15 +4,21 @@ import { DESCRIPTON, FUNC, FUNC_ARGS, MIN_DELAY, developmentChains } from "../ha
 import { util } from "chai";
 import { moveBlocks, moveTime } from "../helpers";
 
-export async function queueAndExec(functionToCall: string, args: number[], proposalDescription: string) {
+export async function queueAndExec(campaignId: number, milestoneIndex: number, proposalDescription: string) {
 
     const { get } = deployments;
 
-    const boxDeployment = await get("Box");
-    const boxAddress = boxDeployment.address;
+    // const boxDeployment = await get("Box");
+    // const boxAddress = boxDeployment.address;
 
-    const box = await ethers.getContractAt("Box", boxAddress);
-    const encodedFunctionCall = box.interface.encodeFunctionData(functionToCall, args);
+    //  const box = await ethers.getContractAt("Box", boxAddress);
+
+    const escrowDeploy = await get("Escrow");
+    const escrowAddress = escrowDeploy.address;
+
+    const escrow = await ethers.getContractAt("Escrow", escrowAddress);
+
+    const encodedFunctionCall = escrow.interface.encodeFunctionData("releaseFundsToCampaign", [campaignId, milestoneIndex]);
 
     const descriptionHash = keccak256(ethers.utils.toUtf8Bytes(proposalDescription));
 
@@ -22,7 +28,7 @@ export async function queueAndExec(functionToCall: string, args: number[], propo
     const governor = await ethers.getContractAt("GovernorContract", governorAddress);
 
     const queueTx = await governor.queue(
-        [box.address],
+        [escrowAddress],
         [0],
         [encodedFunctionCall],
         descriptionHash
@@ -37,7 +43,7 @@ export async function queueAndExec(functionToCall: string, args: number[], propo
     }
 
     const executeTX = await governor.execute(
-        [box.address],
+        [escrowAddress],
         [0],
         [encodedFunctionCall],
         descriptionHash
@@ -47,8 +53,12 @@ export async function queueAndExec(functionToCall: string, args: number[], propo
 
     console.log("executed.");
 
-    console.log('box value is ' + await box.retrieve());
+    console.log('box value is ' + await escrow.retrieve());
 
 }
 
-queueAndExec(FUNC, [FUNC_ARGS], DESCRIPTON).then(() => process.exit(0)).catch(err => {console.log(err), process.exit(1)});
+const campaignId = 1; 
+const milestoneIndex = 0; 
+const proposalDescription = "Release funds for milestone 1 of campaign 1"; // Match your proposal's description
+
+queueAndExec(campaignId, milestoneIndex, proposalDescription).then(() => process.exit(0)).catch(err => {console.log(err), process.exit(1)});

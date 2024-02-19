@@ -53,7 +53,7 @@ contract Escrow is Ownable {
     event ContributionReceived(address indexed contributor, uint amount, uint indexed campaignId);
     event RefundIssued(uint id, address contributor, uint refundAmt);
 
-    constructor(address payable _initialOwner, address_daoAddress, address _escAccount) Ownable(_initialOwner) {
+    constructor(address payable _initialOwner, address _daoAddress, address _escAccount) Ownable(_initialOwner) {
         require(_initialOwner != address(0), "Initial owner cannot be the zero address");
         require(_escAccount != address(0), "Escrow account cannot be the zero address");
         require(_daoAddress != address(0), "DAO address cannot be the zero address.");
@@ -86,7 +86,7 @@ contract Escrow is Ownable {
         newCampaign.status = CampaignStatus.PENDING;
 
         for (uint i = 0; i < _milestoneCount; i++) {
-            newCampaign.milestones.push(Milestone({ amount: _totalAmount / _milestoneCount, status: MilestoneStatus.PENDING }));
+            newCampaign.milestones.push(Milestone( _totalAmount / _milestoneCount, MilestoneStatus.PENDING ));
         }
 
         emit CampaignCreated(newCampaignId, _beneficiary, _totalAmount);
@@ -112,7 +112,7 @@ contract Escrow is Ownable {
         //MANAGE REFUNDS IF ANY MADE IF CAMPAIGN WAS APPROVED THEN REJECTED LATER
     }
 
-    function contributeToCampaign(uint _campaignId) external payable {
+    function contributeToCampaign(uint _campaignId) public payable {
         Campaign storage campaign = campaigns[_campaignId];
         require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
         require(msg.value > 0, "Contribution must be greater than zero.");
@@ -174,17 +174,6 @@ contract Escrow is Ownable {
             emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
 
         }
-    }
-
-    function contributeToCampaign(uint _campaignId) external payable {
-        Campaign storage campaign = campaigns[_campaignId];
-        require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
-        require(msg.value > 0, "Contribution must be greater than zero.");
-
-        campaignContributions[_campaignId][msg.sender] += msg.value;
-        campaignContributors[_campaignId].push(msg.sender); // Track the contributor if not already tracked
-
-        emit ContributionReceived(msg.sender, msg.value, _campaignId);
     }
 
     // Utility function to get contributors list for a campaign

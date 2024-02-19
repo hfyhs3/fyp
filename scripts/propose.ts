@@ -4,35 +4,34 @@ import { moveBlocks } from "../helpers";
 
 import * as fs from "fs";
 
-export async function  makeProposal (
-    functionToCall: string, 
-    args: number[], 
-    proposalDescription: string
-    // ItemId: number,
-    // escrowAddress: string) 
-    )
+export async function  makeProposal ()
     {
         const [deployer] = await ethers.getSigners();
         const { get } = deployments;
 
+        const beneficiaryAddress = deployer.address; 
+        const totalAmount = ethers.utils.parseEther("3");
+        const milestoneCount = 3;
+        const campaignDescription = "Support local charity";
+
+
         const governorDeployment = await get("GovernorContract");
         const governorAddress = governorDeployment.address;
 
-        const boxDeployment = await get("Box");
-        const boxAddress = boxDeployment.address;
+        const escrowDeploy = await get("Escrow");
+        const escrowAddress = escrowDeploy.address;
 
-        // const escrow = await ethers.getContractAt("Escrow", escrowAddress)
+        const escrow = await ethers.getContractAt("Escrow", escrowAddress)
 
         const governor = await ethers.getContractAt("GovernorContract", governorAddress );
-        const box = await ethers.getContractAt("Box", boxAddress);
 
-        const encodedFunctionCall = box.interface.encodeFunctionData(functionToCall,args);
+        const encodedFunctionCall = escrow.interface.encodeFunctionData("createCampaign",[beneficiaryAddress, totalAmount, milestoneCount]);
 
         const createProposalTx = await governor.propose(
-            [boxAddress],
+            [escrowAddress],
             [0],
             [encodedFunctionCall],
-            proposalDescription
+            campaignDescription
         );
 
         const proposeReceipt = await createProposalTx.wait(1);
@@ -56,8 +55,9 @@ export async function  makeProposal (
         );
 }
 
-makeProposal (
-    FUNC,
-    [FUNC_ARGS], 
-    DESCRIPTON).then(() => process.exit(0)).catch(err => {console.log(err), process.exit(1)});
-
+makeProposal()
+    .then(() => process.exit(0))
+    .catch((err) => {
+        console.error(err);
+        process.exit(1);
+    });

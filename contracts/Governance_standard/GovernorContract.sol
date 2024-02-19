@@ -38,7 +38,7 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
         GovernorTimelockControl(_timelock)
     {
         require(address(_escrowAddress) != address(0), "Escrow address cannot be the zero address.");
-        escrow = _escrowAddress;
+        escrow = Escrow(_escrowAddress);
     }
 
 
@@ -59,7 +59,7 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
             totalAmount,
             milestoneCount
         );
-        return this.propose(
+        return propose(
             [address(escrow)], // targets
             [0], // values (no ether is sent)
             [calldataCreateCampaign], // calldatas
