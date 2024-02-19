@@ -53,43 +53,59 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
         uint milestoneCount,
         string memory description
     ) public returns (uint256){
-        bytes memory calldataCreateCampaign = abi.encodeWithSelector(
+        bytes[] memory calldataArray = new bytes[](1);
+        calldataArray[0] = abi.encodeWithSelector(
             Escrow.createCampaign.selector,
             beneficiary,
             totalAmount,
             milestoneCount
         );
+
+        address[] memory targets = new address[](1);
+        targets[0] = address(escrow);
+
+        uint256[] memory values = new uint256[](1);
+        values[0] = 0;
+
         return propose(
-            [address(escrow)], // targets
-            [0], // values (no ether is sent)
-            [calldataCreateCampaign], // calldatas
-            description 
+            targets,
+            values,
+            calldataArray,
+            description
         );
     }
 
-    function approveCampaign(uint campaignId) public onlyDAO {
-        // Prepare calldata for the `approveCampaign` function of the Escrow contract
-        bytes memory callData = abi.encodeWithSelector(Escrow.approveCampaign.selector, campaignId);
+    function approveCampaign(uint campaignId) public onlyDAO returns (uint256){
+        bytes[] memory calldataArray = new bytes[](1);
+        calldataArray[0] = abi.encodeWithSelector(Escrow.approveCampaign.selector, campaignId);
 
-        // Create a proposal in the Governor contract to approve the campaign
+        address[] memory targets = new address[](1);
+        targets[0] = address(escrow);
+
+        uint256[] memory values = new uint256[](1);
+        values[0] = 0;
         return propose(
-            [address(escrow)], // targets
-            [0], // values
-            [callData], // calldatas
-            "Proposal: Campaign Approved" // description
+            targets,
+            values,
+            calldataArray, 
+            "Proposal: Campaign Approved" 
         );
     }
 
-    function rejectCampaign(uint campaignId) public onlyDAO {
-        // Prepare calldata for the `rejectCampaign` function of the Escrow contract
-        bytes memory callData = abi.encodeWithSelector(Escrow.rejectCampaign.selector, campaignId);
+function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
+        bytes[] memory calldataArray = new bytes[](1);
+        calldataArray[0] = abi.encodeWithSelector(Escrow.rejectCampaign.selector, campaignId);
 
-        // Create a proposal in the Governor contract to reject the campaign
+        address[] memory targets = new address[](1);
+        targets[0] = address(escrow);
+
+        uint256[] memory values = new uint256[](1);
+        values[0] = 0;
         return propose(
-            [address(escrow)], // targets
-            [0], // values
-            [callData], // calldatas
-            "Proposal: Campaign Rejected" // description
+            targets,
+            values,
+            calldataArray,
+            "Proposal: Campaign Rejected" 
         );
     }
 
@@ -97,8 +113,6 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
         escrow.releaseMilestone(campaignId, milestoneIndex);
     }
 
-    
- 
     function votingDelay()
         public
         view
