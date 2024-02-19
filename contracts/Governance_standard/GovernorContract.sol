@@ -24,7 +24,7 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
         uint256 _votingDelay, 
         uint256 _votingPeriod, 
         uint256 _quorumPercentage,
-        address _escrowAddress
+        address escrowAddress
         )
 
         Governor("GovernorContract")
@@ -37,8 +37,8 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
         GovernorVotesQuorumFraction(_quorumPercentage)
         GovernorTimelockControl(_timelock)
     {
-        require(address(_escrowAddress) != address(0), "Escrow address cannot be the zero address.");
-        escrow = Escrow(_escrowAddress);
+        require(address(escrowAddress) != address(0), "Escrow address cannot be the zero address.");
+        escrow = Escrow(escrowAddress);
     }
 
 

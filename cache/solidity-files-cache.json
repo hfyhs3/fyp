@@ -2128,8 +2128,8 @@
       ]
     },
     "C:\\Users\\hoors\\dao-fyp\\contracts\\Governance_standard\\GovernorContract.sol": {
-      "lastModificationDate": 1706134572190,
-      "contentHash": "eca06b690959e46ebc3e1bd193c4bcd3",
+      "lastModificationDate": 1708365696383,
+      "contentHash": "d3a126a35ceba40625a544af558c467c",
       "sourceName": "contracts/Governance_standard/GovernorContract.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -2174,6 +2174,7 @@
         "^0.8.19"
       ],
       "artifacts": [
+        "Escrow",
         "GovernorContract"
       ]
     },
