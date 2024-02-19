@@ -10,6 +10,15 @@ const deployGovernorContract: DeployFunction = async(
         const { deployer} = await getNamedAccounts();
         const {deploy, log, get} = deployments;
 
+        const escrowArgs = [deployer, deployer, deployer];
+        const escrow = await deploy("Escrow", {
+            from: deployer,
+            args: escrowArgs,
+            log: true,
+        });
+
+        log(`Escrow Contract deployed at ${escrow.address}`);
+
         const governanceToken = await get("GovernanceToken");
         const timeLock = await get("TimeLock");
 
@@ -20,12 +29,14 @@ const deployGovernorContract: DeployFunction = async(
                 timeLock.address, 
                 VOTING_DELAY, 
                 VOTING_PERIOD, 
-                QUORUM_PERCENTAGE ],
-            log:true,
+                QUORUM_PERCENTAGE,
+                escrow.address
+            ],
+            log: true,
         });
 
         log("03-Governor Contract deployed");
     };
 
 export default deployGovernorContract;
-deployGovernorContract.tags = ['all', "governor"];
+deployGovernorContract.tags = ['all', 'escrow',"governor"];
