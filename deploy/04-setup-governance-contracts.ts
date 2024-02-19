@@ -16,10 +16,18 @@ const setupGovernorContract: DeployFunction = async(
         const governanceTokenDeployment = await get("GovernanceToken");
         const timeLockDeployment = await get("TimeLock");
         const governorDeployment = await get("GovernorContract");
+        const escrowDeployment = await get("Escrow");
 
         const governanceToken = await ethers.getContractAt("GovernanceToken", governanceTokenDeployment.address, deployer);
         const timeLock = await ethers.getContractAt("TimeLock", timeLockDeployment.address, deployer);
         const governor = await ethers.getContractAt("GovernorContract", governorDeployment.address, deployer);
+        const escrow = await ethers.getContractAt("Escrow", escrowDeployment.address, deployer);
+
+        log("setting up Escrow contract");
+
+        const setDAOAddressTx = await escrow.setDAOAddress(governor.address);
+        await setDAOAddressTx.wait(1);
+        log(`DAO address set on Escrow contract: ${governor.address}`);
 
         log("setting up governance rules");
         const proposerRole = await timeLock.PROPOSER_ROLE();
