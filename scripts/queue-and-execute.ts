@@ -1,7 +1,6 @@
 import { deployments, ethers, network } from "hardhat";
 import { keccak256 } from "ethers/lib/utils";
 import { DESCRIPTON, FUNC, FUNC_ARGS, MIN_DELAY, developmentChains } from "../hardhat-helper-config";
-import { util } from "chai";
 import { moveBlocks, moveTime } from "../helpers";
 
 export async function queueAndExec(campaignId: number, milestoneIndex: number, proposalDescription: string) {

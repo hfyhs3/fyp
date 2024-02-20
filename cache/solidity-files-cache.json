@@ -2128,8 +2128,8 @@
       ]
     },
     "C:\\Users\\hoors\\dao-fyp\\contracts\\Governance_standard\\GovernorContract.sol": {
-      "lastModificationDate": 1708365696383,
-      "contentHash": "d3a126a35ceba40625a544af558c467c",
+      "lastModificationDate": 1708365881328,
+      "contentHash": "f6f85c701dbc3b3251c2fd5b33095034",
       "sourceName": "contracts/Governance_standard/GovernorContract.sol",
       "solcConfig": {
         "version": "0.8.20",
