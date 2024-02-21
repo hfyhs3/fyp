@@ -13,7 +13,7 @@ contract Box is Ownable {
         emit ValueChanged(newValue);
     }
 
-    constructor(address initialOwner) Ownable(initialOwner) {
+    constructor(address initialOwner) Ownable() {
         
     }
 

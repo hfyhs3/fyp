@@ -4,4 +4,5 @@
 import type * as governanceStandard from "./Governance_standard";
 export type { governanceStandard };
 export type { Box } from "./Box";
+export type { Escrow } from "./Escrow";
 export type { GovernanceToken } from "./GovernanceToken";

@@ -3,4 +3,5 @@
 /* eslint-disable */
 export * as governanceStandard from "./Governance_standard";
 export { Box__factory } from "./Box__factory";
+export { Escrow__factory } from "./Escrow__factory";
 export { GovernanceToken__factory } from "./GovernanceToken__factory";

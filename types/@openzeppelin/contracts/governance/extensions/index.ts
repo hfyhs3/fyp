@@ -6,3 +6,4 @@ export type { GovernorSettings } from "./GovernorSettings";
 export type { GovernorTimelockControl } from "./GovernorTimelockControl";
 export type { GovernorVotes } from "./GovernorVotes";
 export type { GovernorVotesQuorumFraction } from "./GovernorVotesQuorumFraction";
+export type { IGovernorTimelock } from "./IGovernorTimelock";

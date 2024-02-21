@@ -45,6 +45,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.GovernorVotesQuorumFraction__factory>;
     getContractFactory(
+      name: "IGovernorTimelock",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IGovernorTimelock__factory>;
+    getContractFactory(
       name: "Governor",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Governor__factory>;
@@ -125,6 +129,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC20__factory>;
     getContractFactory(
+      name: "IERC721",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC721__factory>;
+    getContractFactory(
       name: "IERC721Receiver",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC721Receiver__factory>;
@@ -132,14 +140,6 @@ declare module "hardhat/types/runtime" {
       name: "ERC721Holder",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC721Holder__factory>;
-    getContractFactory(
-      name: "Address",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Address__factory>;
-    getContractFactory(
-      name: "ECDSA",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ECDSA__factory>;
     getContractFactory(
       name: "EIP712",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -153,14 +153,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC165__factory>;
     getContractFactory(
-      name: "Math",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Math__factory>;
-    getContractFactory(
-      name: "SafeCast",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.SafeCast__factory>;
-    getContractFactory(
       name: "Nonces",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Nonces__factory>;
@@ -168,10 +160,6 @@ declare module "hardhat/types/runtime" {
       name: "ShortStrings",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ShortStrings__factory>;
-    getContractFactory(
-      name: "Strings",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Strings__factory>;
     getContractFactory(
       name: "Checkpoints",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -184,6 +172,10 @@ declare module "hardhat/types/runtime" {
       name: "Box",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Box__factory>;
+    getContractFactory(
+      name: "Escrow",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Escrow__factory>;
     getContractFactory(
       name: "Escrow",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -241,6 +233,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.GovernorVotesQuorumFraction>;
+    getContractAt(
+      name: "IGovernorTimelock",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IGovernorTimelock>;
     getContractAt(
       name: "Governor",
       address: string,
@@ -342,6 +339,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IERC20>;
     getContractAt(
+      name: "IERC721",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC721>;
+    getContractAt(
       name: "IERC721Receiver",
       address: string,
       signer?: ethers.Signer
@@ -351,16 +353,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ERC721Holder>;
-    getContractAt(
-      name: "Address",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Address>;
-    getContractAt(
-      name: "ECDSA",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ECDSA>;
     getContractAt(
       name: "EIP712",
       address: string,
@@ -377,16 +369,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IERC165>;
     getContractAt(
-      name: "Math",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Math>;
-    getContractAt(
-      name: "SafeCast",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.SafeCast>;
-    getContractAt(
       name: "Nonces",
       address: string,
       signer?: ethers.Signer
@@ -396,11 +378,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ShortStrings>;
-    getContractAt(
-      name: "Strings",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Strings>;
     getContractAt(
       name: "Checkpoints",
       address: string,
@@ -416,6 +393,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Box>;
+    getContractAt(
+      name: "Escrow",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Escrow>;
     getContractAt(
       name: "Escrow",
       address: string,

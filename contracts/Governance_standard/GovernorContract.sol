@@ -15,6 +15,7 @@ interface Escrow {
     function rejectCampaign(uint campaignId) external;
     function releaseMilestone(uint campaignId, uint milestoneIndex) external;
 }
+
 contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
 
     Escrow public escrow;
@@ -92,7 +93,7 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
         );
     }
 
-function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
+    function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
         bytes[] memory calldataArray = new bytes[](1);
         calldataArray[0] = abi.encodeWithSelector(Escrow.rejectCampaign.selector, campaignId);
 
@@ -116,7 +117,7 @@ function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
     function votingDelay()
         public
         view
-        override(Governor, GovernorSettings)
+        override(IGovernor, GovernorSettings)
         returns (uint256)
     {
         return super.votingDelay();
@@ -125,7 +126,7 @@ function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
     function votingPeriod()
         public
         view
-        override(Governor, GovernorSettings)
+        override(IGovernor, GovernorSettings)
         returns (uint256)
     {
         return super.votingPeriod();
@@ -134,7 +135,7 @@ function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
     function quorum(uint256 blockNumber)
         public
         view
-        override(Governor, GovernorVotesQuorumFraction)
+        override(IGovernor, GovernorVotesQuorumFraction)
         returns (uint256)
     {
         return super.quorum(blockNumber);
@@ -149,13 +150,25 @@ function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
         return super.state(proposalId);
     }
 
-    function proposalNeedsQueuing(uint256 proposalId)
-        public
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (bool)
+    // function proposalNeedsQueuing(uint256 proposalId)
+    //     public
+    //     view
+    //     override(Governor, GovernorTimelockControl)
+    //     returns (bool)
+    // {
+    //     return super.proposalNeedsQueuing(proposalId);
+    // }
+
+
+    function propose(
+        address[] memory targets, 
+        uint256[] memory values, 
+        bytes[] memory calldatas, 
+        string memory descriptionHash)
+        public override (Governor, IGovernor)
+        returns (uint256 proposalId)
     {
-        return super.proposalNeedsQueuing(proposalId);
+        return super.propose(targets, values, calldatas, descriptionHash);
     }
 
     function proposalThreshold()
@@ -167,19 +180,11 @@ function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
         return super.proposalThreshold();
     }
 
-    function _queueOperations(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
-        internal
-        override(Governor, GovernorTimelockControl)
-        returns (uint48)
-    {
-        return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
-    }
-
-    function _executeOperations(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
+    function _execute(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
         internal
         override(Governor, GovernorTimelockControl)
     {
-        super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
+        super._execute(proposalId, targets, values, calldatas, descriptionHash);
     }
 
     function _cancel(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
@@ -197,5 +202,9 @@ function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
         returns (address)
     {
         return super._executor();
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view override(Governor, GovernorTimelockControl) returns (bool){
+        return super.supportsInterface(interfaceId);
     }
 }

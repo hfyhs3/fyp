@@ -36,10 +36,10 @@ export interface GovernorContractInterface extends utils.Interface {
     "approveCampaign(uint256)": FunctionFragment;
     "cancel(address[],uint256[],bytes[],bytes32)": FunctionFragment;
     "castVote(uint256,uint8)": FunctionFragment;
-    "castVoteBySig(uint256,uint8,address,bytes)": FunctionFragment;
+    "castVoteBySig(uint256,uint8,uint8,bytes32,bytes32)": FunctionFragment;
     "castVoteWithReason(uint256,uint8,string)": FunctionFragment;
     "castVoteWithReasonAndParams(uint256,uint8,string,bytes)": FunctionFragment;
-    "castVoteWithReasonAndParamsBySig(uint256,uint8,address,string,bytes,bytes)": FunctionFragment;
+    "castVoteWithReasonAndParamsBySig(uint256,uint8,string,bytes,uint8,bytes32,bytes32)": FunctionFragment;
     "clock()": FunctionFragment;
     "eip712Domain()": FunctionFragment;
     "escrow()": FunctionFragment;
@@ -49,13 +49,11 @@ export interface GovernorContractInterface extends utils.Interface {
     "hasVoted(uint256,address)": FunctionFragment;
     "hashProposal(address[],uint256[],bytes[],bytes32)": FunctionFragment;
     "name()": FunctionFragment;
-    "nonces(address)": FunctionFragment;
     "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)": FunctionFragment;
     "onERC1155Received(address,address,uint256,uint256,bytes)": FunctionFragment;
     "onERC721Received(address,address,uint256,bytes)": FunctionFragment;
     "proposalDeadline(uint256)": FunctionFragment;
     "proposalEta(uint256)": FunctionFragment;
-    "proposalNeedsQueuing(uint256)": FunctionFragment;
     "proposalProposer(uint256)": FunctionFragment;
     "proposalSnapshot(uint256)": FunctionFragment;
     "proposalThreshold()": FunctionFragment;
@@ -71,8 +69,8 @@ export interface GovernorContractInterface extends utils.Interface {
     "relay(address,uint256,bytes)": FunctionFragment;
     "releaseMilestone(uint256,uint256)": FunctionFragment;
     "setProposalThreshold(uint256)": FunctionFragment;
-    "setVotingDelay(uint48)": FunctionFragment;
-    "setVotingPeriod(uint32)": FunctionFragment;
+    "setVotingDelay(uint256)": FunctionFragment;
+    "setVotingPeriod(uint256)": FunctionFragment;
     "state(uint256)": FunctionFragment;
     "supportsInterface(bytes4)": FunctionFragment;
     "timelock()": FunctionFragment;
@@ -106,13 +104,11 @@ export interface GovernorContractInterface extends utils.Interface {
       | "hasVoted"
       | "hashProposal"
       | "name"
-      | "nonces"
       | "onERC1155BatchReceived"
       | "onERC1155Received"
       | "onERC721Received"
       | "proposalDeadline"
       | "proposalEta"
-      | "proposalNeedsQueuing"
       | "proposalProposer"
       | "proposalSnapshot"
       | "proposalThreshold"
@@ -171,7 +167,7 @@ export interface GovernorContractInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "castVoteBySig",
-    values: [BigNumberish, BigNumberish, string, BytesLike]
+    values: [BigNumberish, BigNumberish, BigNumberish, BytesLike, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "castVoteWithReason",
@@ -183,7 +179,15 @@ export interface GovernorContractInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "castVoteWithReasonAndParamsBySig",
-    values: [BigNumberish, BigNumberish, string, string, BytesLike, BytesLike]
+    values: [
+      BigNumberish,
+      BigNumberish,
+      string,
+      BytesLike,
+      BigNumberish,
+      BytesLike,
+      BytesLike
+    ]
   ): string;
   encodeFunctionData(functionFragment: "clock", values?: undefined): string;
   encodeFunctionData(
@@ -212,7 +216,6 @@ export interface GovernorContractInterface extends utils.Interface {
     values: [string[], BigNumberish[], BytesLike[], BytesLike]
   ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
-  encodeFunctionData(functionFragment: "nonces", values: [string]): string;
   encodeFunctionData(
     functionFragment: "onERC1155BatchReceived",
     values: [string, string, BigNumberish[], BigNumberish[], BytesLike]
@@ -231,10 +234,6 @@ export interface GovernorContractInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "proposalEta",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "proposalNeedsQueuing",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -383,7 +382,6 @@ export interface GovernorContractInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "nonces", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "onERC1155BatchReceived",
     data: BytesLike
@@ -402,10 +400,6 @@ export interface GovernorContractInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "proposalEta",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "proposalNeedsQueuing",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -579,7 +573,7 @@ export type ProposalExecutedEventFilter =
 
 export interface ProposalQueuedEventObject {
   proposalId: BigNumber;
-  etaSeconds: BigNumber;
+  eta: BigNumber;
 }
 export type ProposalQueuedEvent = TypedEvent<
   [BigNumber, BigNumber],
@@ -732,8 +726,9 @@ export interface GovernorContract extends BaseContract {
     castVoteBySig(
       proposalId: BigNumberish,
       support: BigNumberish,
-      voter: string,
-      signature: BytesLike,
+      v: BigNumberish,
+      r: BytesLike,
+      s: BytesLike,
       overrides?: Overrides & { from?: string }
     ): Promise<ContractTransaction>;
 
@@ -755,10 +750,11 @@ export interface GovernorContract extends BaseContract {
     castVoteWithReasonAndParamsBySig(
       proposalId: BigNumberish,
       support: BigNumberish,
-      voter: string,
       reason: string,
       params: BytesLike,
-      signature: BytesLike,
+      v: BigNumberish,
+      r: BytesLike,
+      s: BytesLike,
       overrides?: Overrides & { from?: string }
     ): Promise<ContractTransaction>;
 
@@ -817,8 +813,6 @@ export interface GovernorContract extends BaseContract {
 
     name(overrides?: CallOverrides): Promise<[string]>;
 
-    nonces(owner: string, overrides?: CallOverrides): Promise<[BigNumber]>;
-
     onERC1155BatchReceived(
       arg0: string,
       arg1: string,
@@ -855,11 +849,6 @@ export interface GovernorContract extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
-    proposalNeedsQueuing(
-      proposalId: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[boolean]>;
-
     proposalProposer(
       proposalId: BigNumberish,
       overrides?: CallOverrides
@@ -887,7 +876,7 @@ export interface GovernorContract extends BaseContract {
       targets: string[],
       values: BigNumberish[],
       calldatas: BytesLike[],
-      description: string,
+      descriptionHash: string,
       overrides?: Overrides & { from?: string }
     ): Promise<ContractTransaction>;
 
@@ -1015,8 +1004,9 @@ export interface GovernorContract extends BaseContract {
   castVoteBySig(
     proposalId: BigNumberish,
     support: BigNumberish,
-    voter: string,
-    signature: BytesLike,
+    v: BigNumberish,
+    r: BytesLike,
+    s: BytesLike,
     overrides?: Overrides & { from?: string }
   ): Promise<ContractTransaction>;
 
@@ -1038,10 +1028,11 @@ export interface GovernorContract extends BaseContract {
   castVoteWithReasonAndParamsBySig(
     proposalId: BigNumberish,
     support: BigNumberish,
-    voter: string,
     reason: string,
     params: BytesLike,
-    signature: BytesLike,
+    v: BigNumberish,
+    r: BytesLike,
+    s: BytesLike,
     overrides?: Overrides & { from?: string }
   ): Promise<ContractTransaction>;
 
@@ -1100,8 +1091,6 @@ export interface GovernorContract extends BaseContract {
 
   name(overrides?: CallOverrides): Promise<string>;
 
-  nonces(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
-
   onERC1155BatchReceived(
     arg0: string,
     arg1: string,
@@ -1138,11 +1127,6 @@ export interface GovernorContract extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
-  proposalNeedsQueuing(
-    proposalId: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<boolean>;
-
   proposalProposer(
     proposalId: BigNumberish,
     overrides?: CallOverrides
@@ -1170,7 +1154,7 @@ export interface GovernorContract extends BaseContract {
     targets: string[],
     values: BigNumberish[],
     calldatas: BytesLike[],
-    description: string,
+    descriptionHash: string,
     overrides?: Overrides & { from?: string }
   ): Promise<ContractTransaction>;
 
@@ -1295,8 +1279,9 @@ export interface GovernorContract extends BaseContract {
     castVoteBySig(
       proposalId: BigNumberish,
       support: BigNumberish,
-      voter: string,
-      signature: BytesLike,
+      v: BigNumberish,
+      r: BytesLike,
+      s: BytesLike,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1318,10 +1303,11 @@ export interface GovernorContract extends BaseContract {
     castVoteWithReasonAndParamsBySig(
       proposalId: BigNumberish,
       support: BigNumberish,
-      voter: string,
       reason: string,
       params: BytesLike,
-      signature: BytesLike,
+      v: BigNumberish,
+      r: BytesLike,
+      s: BytesLike,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1380,8 +1366,6 @@ export interface GovernorContract extends BaseContract {
 
     name(overrides?: CallOverrides): Promise<string>;
 
-    nonces(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
-
     onERC1155BatchReceived(
       arg0: string,
       arg1: string,
@@ -1418,11 +1402,6 @@ export interface GovernorContract extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    proposalNeedsQueuing(
-      proposalId: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
-
     proposalProposer(
       proposalId: BigNumberish,
       overrides?: CallOverrides
@@ -1450,7 +1429,7 @@ export interface GovernorContract extends BaseContract {
       targets: string[],
       values: BigNumberish[],
       calldatas: BytesLike[],
-      description: string,
+      descriptionHash: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1580,12 +1559,9 @@ export interface GovernorContract extends BaseContract {
 
     "ProposalQueued(uint256,uint256)"(
       proposalId?: null,
-      etaSeconds?: null
+      eta?: null
     ): ProposalQueuedEventFilter;
-    ProposalQueued(
-      proposalId?: null,
-      etaSeconds?: null
-    ): ProposalQueuedEventFilter;
+    ProposalQueued(proposalId?: null, eta?: null): ProposalQueuedEventFilter;
 
     "ProposalThresholdSet(uint256,uint256)"(
       oldProposalThreshold?: null,
@@ -1696,8 +1672,9 @@ export interface GovernorContract extends BaseContract {
     castVoteBySig(
       proposalId: BigNumberish,
       support: BigNumberish,
-      voter: string,
-      signature: BytesLike,
+      v: BigNumberish,
+      r: BytesLike,
+      s: BytesLike,
       overrides?: Overrides & { from?: string }
     ): Promise<BigNumber>;
 
@@ -1719,10 +1696,11 @@ export interface GovernorContract extends BaseContract {
     castVoteWithReasonAndParamsBySig(
       proposalId: BigNumberish,
       support: BigNumberish,
-      voter: string,
       reason: string,
       params: BytesLike,
-      signature: BytesLike,
+      v: BigNumberish,
+      r: BytesLike,
+      s: BytesLike,
       overrides?: Overrides & { from?: string }
     ): Promise<BigNumber>;
 
@@ -1769,8 +1747,6 @@ export interface GovernorContract extends BaseContract {
 
     name(overrides?: CallOverrides): Promise<BigNumber>;
 
-    nonces(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
-
     onERC1155BatchReceived(
       arg0: string,
       arg1: string,
@@ -1807,11 +1783,6 @@ export interface GovernorContract extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    proposalNeedsQueuing(
-      proposalId: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     proposalProposer(
       proposalId: BigNumberish,
       overrides?: CallOverrides
@@ -1833,7 +1804,7 @@ export interface GovernorContract extends BaseContract {
       targets: string[],
       values: BigNumberish[],
       calldatas: BytesLike[],
-      description: string,
+      descriptionHash: string,
       overrides?: Overrides & { from?: string }
     ): Promise<BigNumber>;
 
@@ -1964,8 +1935,9 @@ export interface GovernorContract extends BaseContract {
     castVoteBySig(
       proposalId: BigNumberish,
       support: BigNumberish,
-      voter: string,
-      signature: BytesLike,
+      v: BigNumberish,
+      r: BytesLike,
+      s: BytesLike,
       overrides?: Overrides & { from?: string }
     ): Promise<PopulatedTransaction>;
 
@@ -1987,10 +1959,11 @@ export interface GovernorContract extends BaseContract {
     castVoteWithReasonAndParamsBySig(
       proposalId: BigNumberish,
       support: BigNumberish,
-      voter: string,
       reason: string,
       params: BytesLike,
-      signature: BytesLike,
+      v: BigNumberish,
+      r: BytesLike,
+      s: BytesLike,
       overrides?: Overrides & { from?: string }
     ): Promise<PopulatedTransaction>;
 
@@ -2037,11 +2010,6 @@ export interface GovernorContract extends BaseContract {
 
     name(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    nonces(
-      owner: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     onERC1155BatchReceived(
       arg0: string,
       arg1: string,
@@ -2078,11 +2046,6 @@ export interface GovernorContract extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    proposalNeedsQueuing(
-      proposalId: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     proposalProposer(
       proposalId: BigNumberish,
       overrides?: CallOverrides
@@ -2104,7 +2067,7 @@ export interface GovernorContract extends BaseContract {
       targets: string[],
       values: BigNumberish[],
       calldatas: BytesLike[],
-      description: string,
+      descriptionHash: string,
       overrides?: Overrides & { from?: string }
     ): Promise<PopulatedTransaction>;
 
