@@ -1867,8 +1867,8 @@
       ]
     },
     "C:\\Users\\hoors\\dao-fyp\\contracts\\Governance_standard\\GovernorContract.sol": {
-      "lastModificationDate": 1708509937837,
-      "contentHash": "16872584b2f565b75b1a72ab2e90a5ff",
+      "lastModificationDate": 1708529896894,
+      "contentHash": "9c0d805650aa1a7a32d740a9083dabc4",
       "sourceName": "contracts/Governance_standard/GovernorContract.sol",
       "solcConfig": {
         "version": "0.8.19",
@@ -1912,8 +1912,8 @@
         "^0.8.19"
       ],
       "artifacts": [
-        "Escrow",
-        "GovernorContract"
+        "GovernorContract",
+        "IEscrow"
       ]
     },
     "C:\\Users\\hoors\\dao-fyp\\node_modules\\@openzeppelin\\contracts\\governance\\extensions\\GovernorSettings.sol": {

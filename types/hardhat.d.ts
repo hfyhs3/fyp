@@ -69,18 +69,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Votes__factory>;
     getContractFactory(
-      name: "IERC1155Errors",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC1155Errors__factory>;
-    getContractFactory(
-      name: "IERC20Errors",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC20Errors__factory>;
-    getContractFactory(
-      name: "IERC721Errors",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC721Errors__factory>;
-    getContractFactory(
       name: "IERC1271",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC1271__factory>;
@@ -153,17 +141,9 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC165__factory>;
     getContractFactory(
-      name: "Nonces",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Nonces__factory>;
-    getContractFactory(
       name: "ShortStrings",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ShortStrings__factory>;
-    getContractFactory(
-      name: "Checkpoints",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Checkpoints__factory>;
     getContractFactory(
       name: "DoubleEndedQueue",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -184,6 +164,10 @@ declare module "hardhat/types/runtime" {
       name: "GovernorContract",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.GovernorContract__factory>;
+    getContractFactory(
+      name: "IEscrow",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IEscrow__factory>;
     getContractFactory(
       name: "TimeLock",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -263,21 +247,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Votes>;
-    getContractAt(
-      name: "IERC1155Errors",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IERC1155Errors>;
-    getContractAt(
-      name: "IERC20Errors",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IERC20Errors>;
-    getContractAt(
-      name: "IERC721Errors",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IERC721Errors>;
     getContractAt(
       name: "IERC1271",
       address: string,
@@ -369,20 +338,10 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IERC165>;
     getContractAt(
-      name: "Nonces",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Nonces>;
-    getContractAt(
       name: "ShortStrings",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ShortStrings>;
-    getContractAt(
-      name: "Checkpoints",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Checkpoints>;
     getContractAt(
       name: "DoubleEndedQueue",
       address: string,
@@ -408,6 +367,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.GovernorContract>;
+    getContractAt(
+      name: "IEscrow",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IEscrow>;
     getContractAt(
       name: "TimeLock",
       address: string,

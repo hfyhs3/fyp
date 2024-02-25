@@ -17,6 +17,7 @@ const deployEscrow: DeployFunction = async function (hre: HardhatRuntimeEnvironm
         from: deployer,
         args: [initialOwner, daoAddress, escAccount],
         log: true,
+        contract: "contracts/Escrow.sol:Escrow",
     });
 
     log(`Escrow Contract deployed at ${escrow.address}`);

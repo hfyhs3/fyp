@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
-interface Escrow {
+interface IEscrow {
     function createCampaign(address beneficiary, uint totalAmount, uint milestoneCount) external;
     function approveCampaign(uint campaignId) external;
     function rejectCampaign(uint campaignId) external;
@@ -18,7 +18,7 @@ interface Escrow {
 
 contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
 
-    Escrow public escrow;
+    IEscrow public escrow;
     constructor(
         IVotes _token, 
         TimelockController _timelock, 
@@ -39,7 +39,7 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
         GovernorTimelockControl(_timelock)
     {
         require(address(escrowAddress) != address(0), "Escrow address cannot be the zero address.");
-        escrow = Escrow(escrowAddress);
+        escrow = IEscrow(escrowAddress);
     }
 
 
@@ -56,7 +56,7 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
     ) public returns (uint256){
         bytes[] memory calldataArray = new bytes[](1);
         calldataArray[0] = abi.encodeWithSelector(
-            Escrow.createCampaign.selector,
+            IEscrow.createCampaign.selector,
             beneficiary,
             totalAmount,
             milestoneCount
@@ -78,7 +78,7 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
 
     function approveCampaign(uint campaignId) public onlyDAO returns (uint256){
         bytes[] memory calldataArray = new bytes[](1);
-        calldataArray[0] = abi.encodeWithSelector(Escrow.approveCampaign.selector, campaignId);
+        calldataArray[0] = abi.encodeWithSelector(IEscrow.approveCampaign.selector, campaignId);
 
         address[] memory targets = new address[](1);
         targets[0] = address(escrow);
@@ -95,7 +95,7 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
 
     function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
         bytes[] memory calldataArray = new bytes[](1);
-        calldataArray[0] = abi.encodeWithSelector(Escrow.rejectCampaign.selector, campaignId);
+        calldataArray[0] = abi.encodeWithSelector(IEscrow.rejectCampaign.selector, campaignId);
 
         address[] memory targets = new address[](1);
         targets[0] = address(escrow);

@@ -3,3 +3,4 @@
 /* eslint-disable */
 export type { Escrow } from "./Escrow";
 export type { GovernorContract } from "./GovernorContract";
+export type { IEscrow } from "./IEscrow";

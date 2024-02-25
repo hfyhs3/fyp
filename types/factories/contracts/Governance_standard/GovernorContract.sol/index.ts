@@ -3,3 +3,4 @@
 /* eslint-disable */
 export { Escrow__factory } from "./Escrow__factory";
 export { GovernorContract__factory } from "./GovernorContract__factory";
+export { IEscrow__factory } from "./IEscrow__factory";
