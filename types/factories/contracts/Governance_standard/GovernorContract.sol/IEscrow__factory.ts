@@ -53,19 +53,6 @@ const _abi = [
         name: "campaignId",
         type: "uint256",
       },
-    ],
-    name: "rejectCampaign",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "campaignId",
-        type: "uint256",
-      },
       {
         internalType: "uint256",
         name: "milestoneIndex",

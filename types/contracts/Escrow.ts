@@ -37,6 +37,8 @@ export interface EscrowInterface extends utils.Interface {
     "createCampaign(address,uint256,uint256)": FunctionFragment;
     "daoAddress()": FunctionFragment;
     "escAccount()": FunctionFragment;
+    "getCampaignStatus(uint256)": FunctionFragment;
+    "getDaoAddress()": FunctionFragment;
     "owner()": FunctionFragment;
     "refundContributors(uint256)": FunctionFragment;
     "rejectCampaign(uint256)": FunctionFragment;
@@ -56,6 +58,8 @@ export interface EscrowInterface extends utils.Interface {
       | "createCampaign"
       | "daoAddress"
       | "escAccount"
+      | "getCampaignStatus"
+      | "getDaoAddress"
       | "owner"
       | "refundContributors"
       | "rejectCampaign"
@@ -95,6 +99,14 @@ export interface EscrowInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "escAccount",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getCampaignStatus",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDaoAddress",
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
@@ -146,6 +158,14 @@ export interface EscrowInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "daoAddress", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "escAccount", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "getCampaignStatus",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getDaoAddress",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "refundContributors",
@@ -335,6 +355,13 @@ export interface Escrow extends BaseContract {
 
     escAccount(overrides?: CallOverrides): Promise<[string]>;
 
+    getCampaignStatus(
+      _campaignId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[number]>;
+
+    getDaoAddress(overrides?: CallOverrides): Promise<[string]>;
+
     owner(overrides?: CallOverrides): Promise<[string]>;
 
     refundContributors(
@@ -413,6 +440,13 @@ export interface Escrow extends BaseContract {
 
   escAccount(overrides?: CallOverrides): Promise<string>;
 
+  getCampaignStatus(
+    _campaignId: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<number>;
+
+  getDaoAddress(overrides?: CallOverrides): Promise<string>;
+
   owner(overrides?: CallOverrides): Promise<string>;
 
   refundContributors(
@@ -490,6 +524,13 @@ export interface Escrow extends BaseContract {
     daoAddress(overrides?: CallOverrides): Promise<string>;
 
     escAccount(overrides?: CallOverrides): Promise<string>;
+
+    getCampaignStatus(
+      _campaignId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<number>;
+
+    getDaoAddress(overrides?: CallOverrides): Promise<string>;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
@@ -625,6 +666,13 @@ export interface Escrow extends BaseContract {
 
     escAccount(overrides?: CallOverrides): Promise<BigNumber>;
 
+    getCampaignStatus(
+      _campaignId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    getDaoAddress(overrides?: CallOverrides): Promise<BigNumber>;
+
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     refundContributors(
@@ -696,6 +744,13 @@ export interface Escrow extends BaseContract {
     daoAddress(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     escAccount(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    getCampaignStatus(
+      _campaignId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getDaoAddress(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 

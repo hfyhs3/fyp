@@ -45,7 +45,7 @@ if (!networkProposals) {
     console.log("No proposals found for this network");
     process.exit(0);
   }
-  const proposalID = networkProposals[0];
+  const proposalID = networkProposals[1]; // the 0 has been changed to 1 as the new proposal id is created
   
   console.log("Proposal ID: ", proposalID);
   

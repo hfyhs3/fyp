@@ -8,9 +8,13 @@ export const executors: string[] = [];
 
 ​export const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
 
-export const FUNC = "store";
-export const FUNC_ARGS = 100;
-export const DESCRIPTON = "Proposal #1 - updated box's val to 100";
+
+export const campaignId = 1;
+export const milestoneIndex = 0;
+// testing purposes only
+export const FUNC = "releaseMilestone";
+export const FUNC_ARGS = [campaignId, milestoneIndex];
+export const DESCRIPTON = `Release milestone ${milestoneIndex} for campaign ${campaignId}`;
 
 export const developmentChains = ["hardhat", "localhost"];
 

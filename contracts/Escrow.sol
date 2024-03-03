@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "contracts/Governance_standard/GovernorContract.sol";
+import "hardhat/console.sol";
 
 contract Escrow is Ownable {
 
@@ -42,6 +44,7 @@ contract Escrow is Ownable {
 
     address public escAccount;
     address public daoAddress;
+    // GovernorContract public dao;
 
     mapping(uint => Campaign) public campaigns;
 
@@ -62,6 +65,7 @@ contract Escrow is Ownable {
         transferOwnership(initialOwner);
         daoAddress = _daoAddress;
         escAccount = _escAccount;
+        // dao = GovernorContract(payable(daoAddress));
     }
 
     modifier onlyEscrowDAO() {
@@ -69,12 +73,21 @@ contract Escrow is Ownable {
         _;
     }
 
+    function getCampaignStatus(uint _campaignId) public view returns (CampaignStatus) {
+         return campaigns[_campaignId].status;
+    }
+
     function setDAOAddress(address _daoAddress) external onlyOwner {
         require(_daoAddress != address(0), "DAO address cannot be the zero address");
         daoAddress = _daoAddress;
+        // dao = GovernorContract(payable(daoAddress));
     }
 
-    function createCampaign(address _beneficiary, uint _totalAmount, uint _milestoneCount) external onlyEscrowDAO{
+    function getDaoAddress() public view returns (address) {
+        return daoAddress;
+    }
+
+    function createCampaign(address _beneficiary, uint _totalAmount, uint _milestoneCount) external {
         require(_beneficiary != address(0), "Beneficiary cannot be the zero address.");
         require(_totalAmount > 0, "Total amount must be greater than zero.");
         require(_milestoneCount > 0, "At least one milestone required.");
@@ -96,10 +109,10 @@ contract Escrow is Ownable {
 
     }
 
-    function approveCampaign(uint _campaignId) external onlyEscrowDAO {
+    function approveCampaign(uint _campaignId) external {
         Campaign storage campaign = campaigns[_campaignId];
 
-        require(campaign.status == CampaignStatus.PENDING, "Campaign must be pending approval.");
+        // require(campaign.status == CampaignStatus.PENDING, "Campaign must be pending approval.");
         campaign.status = CampaignStatus.ACTIVE;
         emit CampaignStatusChanged(_campaignId, CampaignStatus.ACTIVE);
     }
@@ -125,6 +138,9 @@ contract Escrow is Ownable {
     }
 
     function releaseMilestone(uint _campaignId, uint _milestoneIndex) external onlyEscrowDAO {
+
+        console.log("releaseMilestone");
+
         Campaign storage campaign = campaigns[_campaignId];
         require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
         Milestone storage milestone = campaign.milestones[_milestoneIndex];
@@ -192,4 +208,6 @@ contract Escrow is Ownable {
         require(totalContributionsForMilestone >= campaign.milestones[_milestoneIndex].amount, "Milestone not reached.");
         return totalContributionsForMilestone; 
     }
+
+
 }

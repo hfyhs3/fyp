@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
 interface IEscrow {
     function createCampaign(address beneficiary, uint totalAmount, uint milestoneCount) external;
     function approveCampaign(uint campaignId) external;
-    function rejectCampaign(uint campaignId) external;
+    // function rejectCampaign(uint campaignId) external;
     function releaseMilestone(uint campaignId, uint milestoneIndex) external;
 }
 
@@ -76,7 +76,7 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
         );
     }
 
-    function approveCampaign(uint campaignId) public onlyDAO returns (uint256){
+    function approveCampaign(uint campaignId) public returns (uint256){
         bytes[] memory calldataArray = new bytes[](1);
         calldataArray[0] = abi.encodeWithSelector(IEscrow.approveCampaign.selector, campaignId);
 
@@ -93,25 +93,41 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
         );
     }
 
-    function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
+    // function rejectCampaign(uint campaignId) public onlyDAO returns (uint256){
+    //     bytes[] memory calldataArray = new bytes[](1);
+    //     calldataArray[0] = abi.encodeWithSelector(IEscrow.rejectCampaign.selector, campaignId);
+
+    //     address[] memory targets = new address[](1);
+    //     targets[0] = address(escrow);
+
+    //     uint256[] memory values = new uint256[](1);
+    //     values[0] = 0;
+    //     return propose(
+    //         targets,
+    //         values,
+    //         calldataArray,
+    //         "Proposal: Campaign Rejected" 
+    //     );
+    // }
+
+    function releaseMilestone(uint campaignId, uint milestoneIndex) public onlyDAO returns (uint256){
         bytes[] memory calldataArray = new bytes[](1);
-        calldataArray[0] = abi.encodeWithSelector(IEscrow.rejectCampaign.selector, campaignId);
+        calldataArray[0] = abi.encodeWithSelector(IEscrow.releaseMilestone.selector, campaignId, milestoneIndex);
 
         address[] memory targets = new address[](1);
         targets[0] = address(escrow);
 
         uint256[] memory values = new uint256[](1);
         values[0] = 0;
+
+        string memory description = string(abi.encodePacked("Proposal: Milestone ", milestoneIndex, " Released"));
+
         return propose(
             targets,
             values,
             calldataArray,
-            "Proposal: Campaign Rejected" 
+            description
         );
-    }
-
-    function releaseMilestone(uint campaignId, uint milestoneIndex) public onlyDAO {
-        escrow.releaseMilestone(campaignId, milestoneIndex);
     }
 
     function votingDelay()
