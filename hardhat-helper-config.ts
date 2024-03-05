@@ -10,7 +10,7 @@ export const executors: string[] = [];
 
 
 export const campaignId = 1;
-export const milestoneIndex = 0;
+export const milestoneIndex = 1;
 // testing purposes only
 export const FUNC = "releaseMilestone";
 export const FUNC_ARGS = [campaignId, milestoneIndex];

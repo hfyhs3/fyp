@@ -46,7 +46,6 @@ if (!networkProposals) {
     process.exit(0);
   }
   const proposalID = networkProposals[1]; // the 0 has been changed to 1 as the new proposal id is created
-  
   console.log("Proposal ID: ", proposalID);
   
 vote(proposalID).then(() => process.exit(0)).catch(err => {console.log(err), process.exit(1)});

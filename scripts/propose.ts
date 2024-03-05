@@ -66,9 +66,19 @@ export async function  makeProposal ()
 
     const campaignCreatedEvent = createCampaignReceipt.events?.find(e => e.event === "CampaignCreated");
     if (!campaignCreatedEvent || !campaignCreatedEvent.args) throw new Error("CampaignCreated event not found");
-    const campaignId = campaignCreatedEvent.args[0].toString();
-    console.log(`Campaign created with ID: ${campaignId}`);
 
+    const campaignId = campaignCreatedEvent.args[0];
+    const beneficiary = campaignCreatedEvent.args[1];
+    const amount = campaignCreatedEvent.args[2];
+
+    const formattedAmount = ethers.utils.formatEther(amount);
+
+    console.log(`Campaign Created with ID: ${campaignId}`);
+    console.log(`Beneficiary: ${beneficiary}`);
+    console.log(`Total Amount: ${formattedAmount} ETH`);
+
+    console.log(`Campaign created with ID: ${campaignId}`);
+    
     const encodedFunctionCall = governor.interface.encodeFunctionData("approveCampaign",[campaignId]);
 
     const createProposalTx = await governor.propose(
@@ -79,12 +89,16 @@ export async function  makeProposal ()
     );
 
     const status = await escrow.getCampaignStatus(campaignId);
-    console.log(`Campaign Status: ${escrow.getCampaignStatus(campaignId)}`);
+    const statusString = ["PENDING", "ACTIVE", "COMPLETED", "REJECTED"][status];
+    console.log(`Campaign Status: ${statusString}`);
 
     if (status.toString() !== "1") {
         const approve = await escrow.approveCampaign(campaignId);
         await approve.wait(1);
-        console.log(`Campaign approved: ${status}`);
+        const newStatus = await escrow.getCampaignStatus(campaignId);
+        const newStatusString = ["PENDING", "ACTIVE", "COMPLETED", "REJECTED"][newStatus];
+        console.log(`Campaign approved: ${newStatusString}`);
+
     }
 
     const proposeReceipt = await createProposalTx.wait(1);

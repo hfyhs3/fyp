@@ -32,13 +32,13 @@ contract Escrow is Ownable {
         uint amount;
         MilestoneStatus status;
     }
-
     struct Campaign {
         uint id;
         address beneficiary;
         uint totalAmount;
         CampaignStatus status;
         Milestone[] milestones;
+        uint currentIndex;
         mapping(address => uint) contributions;
     }
 
@@ -57,6 +57,11 @@ contract Escrow is Ownable {
     event MilestoneUpdated(uint indexed campaignId, uint milestoneIndex, MilestoneStatus status);
     event ContributionReceived(address indexed contributor, uint amount, uint indexed campaignId);
     event RefundIssued(uint id, address contributor, uint refundAmt);
+    event AllMilestonesReceived(uint indexed campaignId);
+
+    event MilestoneReached(uint indexed campaignId, uint milestoneIndex);
+    event CampaignCompleted(uint indexed campaignId);
+
 
     constructor(address payable initialOwner, address _daoAddress, address _escAccount) Ownable() {
         require(initialOwner != address(0), "Initial owner cannot be the zero address");
@@ -68,9 +73,26 @@ contract Escrow is Ownable {
         // dao = GovernorContract(payable(daoAddress));
     }
 
-    modifier onlyEscrowDAO() {
-        require(msg.sender == daoAddress, "Caller is not the DAO account");
-        _;
+    // modifier onlyEscrowDAO() {
+    //     require(msg.sender == daoAddress, "Caller is not the DAO account");
+    //     _;
+    // }
+
+    function getMilestoneCount(uint _campaignId) public view returns (uint) {
+        return campaigns[_campaignId].milestones.length;
+    }
+
+    function getMilestoneDetails(uint _campaignId, uint _milestoneIndex) public view returns (uint amount, MilestoneStatus status) {
+        Campaign storage campaign = campaigns[_campaignId];
+        Milestone storage milestone = campaign.milestones[_milestoneIndex];
+        return (milestone.amount, milestone.status);
+    }
+
+    function setMilestoneStatus(uint _campaignId, uint _milestoneIndex, MilestoneStatus _status) public {
+    // require(msg.sender == daoAddress, "Only DAO can update milestone status");
+        Milestone storage milestone = campaigns[_campaignId].milestones[_milestoneIndex];
+        milestone.status = _status;
+        emit MilestoneUpdated(_campaignId, _milestoneIndex, _status);
     }
 
     function getCampaignStatus(uint _campaignId) public view returns (CampaignStatus) {
@@ -99,7 +121,11 @@ contract Escrow is Ownable {
         newCampaign.id = newCampaignId;
         newCampaign.beneficiary = _beneficiary;
         newCampaign.totalAmount = _totalAmount;
+        console.log("Total Amount Before Setting: ", newCampaign.totalAmount);
+        newCampaign.totalAmount = _totalAmount;
+        console.log("Total Amount After Setting: ", newCampaign.totalAmount);
         newCampaign.status = CampaignStatus.PENDING;
+        newCampaign.currentIndex = 1;
 
         for (uint i = 0; i < _milestoneCount; i++) {
             newCampaign.milestones.push(Milestone( _totalAmount / _milestoneCount, MilestoneStatus.PENDING ));
@@ -117,9 +143,9 @@ contract Escrow is Ownable {
         emit CampaignStatusChanged(_campaignId, CampaignStatus.ACTIVE);
     }
 
-    function rejectCampaign(uint _campaignId) external onlyEscrowDAO {
+    function rejectCampaign(uint _campaignId) external {
         Campaign storage campaign = campaigns[_campaignId];
-        require(campaign.status == CampaignStatus.PENDING, "Campaign must be pending approval.");
+        // require(campaign.status == CampaignStatus.PENDING, "Campaign must be pending approval.");
 
         campaign.status = CampaignStatus.REJECTED;
         emit CampaignStatusChanged(_campaignId, CampaignStatus.REJECTED);
@@ -137,23 +163,23 @@ contract Escrow is Ownable {
         emit ContributionReceived(msg.sender, msg.value, _campaignId);
     }
 
-    function releaseMilestone(uint _campaignId, uint _milestoneIndex) external onlyEscrowDAO {
-
-        console.log("releaseMilestone");
-
+    function releaseMilestone(uint _campaignId, uint _milestoneIndex) external {
         Campaign storage campaign = campaigns[_campaignId];
         require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
         Milestone storage milestone = campaign.milestones[_milestoneIndex];
-        require(milestone.status == MilestoneStatus.PENDING, "Milestone must be pending.");
+        require(milestone.amount > 0, "Milestone has no funds allocated.");
+        // milestone.status = MilestoneStatus.PENDING;
 
+        // error here
         payable(campaign.beneficiary).transfer(milestone.amount);
-
-        milestone.status = MilestoneStatus.RELEASED;
-        emit MilestoneUpdated(_campaignId, _milestoneIndex, MilestoneStatus.RELEASED);
 
         bool allMilestonesReleased = true;
         for (uint i = 0; i < campaign.milestones.length; i++) {
-            if (campaign.milestones[i].status != MilestoneStatus.RELEASED) {
+            if (campaign.milestones[i].status == MilestoneStatus.PENDING && milestone.amount > 0) {
+                campaign.milestones[i].status = MilestoneStatus.RELEASED;
+                emit MilestoneUpdated(_campaignId, i, MilestoneStatus.RELEASED);
+            }
+            if (milestone.status != MilestoneStatus.RELEASED) {
                 allMilestonesReleased = false;
                 break;
             }
@@ -161,43 +187,61 @@ contract Escrow is Ownable {
         if (allMilestonesReleased) {
             campaign.status = CampaignStatus.COMPLETED;
             emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
+            emit AllMilestonesReceived(_campaignId);
         }
     }
 
-    function refundContributors(uint _campaignId) public onlyEscrowDAO {
-        Campaign storage campaign = campaigns[_campaignId];
-        require(campaign.status == CampaignStatus.REJECTED || (campaign.status == CampaignStatus.COMPLETED && campaign.totalAmount > address(this).balance), "Invalid campaign status for refund.");        
+    function checkAndAdvanceMilestone(uint campaignId) public {
+        Campaign storage campaign = campaigns[campaignId];
+        require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active");
 
-        address[] storage contributors = campaignContributors[_campaignId];
+        if (campaign.currentIndex < campaign.milestones.length){
+            campaign.milestones[campaign.currentIndex].status = MilestoneStatus.RELEASED;
+            emit MilestoneReached(campaignId, campaign.currentIndex);
 
-        for (uint256 i = 0; i < contributors.length; i++) {
-            address contributor = contributors[i];
-            uint contribution = campaignContributions[_campaignId][contributor];
-            if (contribution > 0){
-                uint refundAmount = (contribution * 98) / 100; //2% flat rate deduction from the refund amount
+            campaign.currentIndex++; // Move to the next milestone
 
-                campaignContributions[_campaignId][contributor] = 0; //resetting value to prevent re-entrancy attacks
-
-                (bool sent, ) = contributor.call{value:refundAmount}("");
-                require(sent, "failed to send refund");
-
-                emit RefundIssued(_campaignId, contributor, refundAmount);
-
-
+            if (campaign.currentIndex >= campaign.milestones.length) {
+                campaign.status = CampaignStatus.COMPLETED;
+                emit CampaignCompleted(campaignId);
             }
         }
-        
-        if (campaign.status != CampaignStatus.COMPLETED){
-            campaign.status = CampaignStatus.COMPLETED;
-            emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
+     }
 
-        }
-    }
+    // function refundContributors(uint _campaignId) public  {
+    //     Campaign storage campaign = campaigns[_campaignId];
+    //     require(campaign.status == CampaignStatus.REJECTED || (campaign.status == CampaignStatus.COMPLETED && campaign.totalAmount > address(this).balance), "Invalid campaign status for refund.");        
+
+    //     address[] storage contributors = campaignContributors[_campaignId];
+
+    //     for (uint256 i = 0; i < contributors.length; i++) {
+    //         address contributor = contributors[i];
+    //         uint contribution = campaignContributions[_campaignId][contributor];
+    //         if (contribution > 0){
+    //             uint refundAmount = (contribution * 98) / 100; //2% flat rate deduction from the refund amount
+
+    //             campaignContributions[_campaignId][contributor] = 0; //resetting value to prevent re-entrancy attacks
+
+    //             (bool sent, ) = contributor.call{value:refundAmount}("");
+    //             require(sent, "failed to send refund");
+
+    //             emit RefundIssued(_campaignId, contributor, refundAmount);
+
+
+    //         }
+    //     }
+        
+    //     if (campaign.status != CampaignStatus.COMPLETED){
+    //         campaign.status = CampaignStatus.COMPLETED;
+    //         emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
+
+    //     }
+    // }
 
     // Utility function to get contributors list for a campaign
     function calculateTotalContributionsForMilestone(uint _campaignId, uint _milestoneIndex) public view returns (uint256) { 
         Campaign storage campaign = campaigns[_campaignId]; 
-        // MileStone storage milestone = campaign.milestones[_milestoneIndex];
+        Milestone storage milestone = campaign.milestones[_milestoneIndex];
 
         uint256 totalContributionsForMilestone = 0; 
 
@@ -205,7 +249,9 @@ contract Escrow is Ownable {
             address contributor = campaignContributors[_campaignId][i];
             totalContributionsForMilestone += campaign.contributions[contributor];
         }
-        require(totalContributionsForMilestone >= campaign.milestones[_milestoneIndex].amount, "Milestone not reached.");
+        console.log("Total contributions for milestone:", totalContributionsForMilestone);
+        console.log("Milestone required amount:", milestone.amount);
+        // require(totalContributionsForMilestone >= campaign.milestones[_milestoneIndex].amount, "Milestone not reached.");
         return totalContributionsForMilestone; 
     }
 

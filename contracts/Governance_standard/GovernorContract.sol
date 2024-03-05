@@ -110,7 +110,7 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
     //     );
     // }
 
-    function releaseMilestone(uint campaignId, uint milestoneIndex) public onlyDAO returns (uint256){
+    function releaseMilestone(uint campaignId, uint milestoneIndex) public returns (uint256){
         bytes[] memory calldataArray = new bytes[](1);
         calldataArray[0] = abi.encodeWithSelector(IEscrow.releaseMilestone.selector, campaignId, milestoneIndex);
 
@@ -120,7 +120,7 @@ contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple,
         uint256[] memory values = new uint256[](1);
         values[0] = 0;
 
-        string memory description = string(abi.encodePacked("Proposal: Milestone ", milestoneIndex, " Released"));
+        string memory description = string(abi.encodePacked("Support local charity"));
 
         return propose(
             targets,

@@ -33,18 +33,21 @@ export interface EscrowInterface extends utils.Interface {
     "calculateTotalContributionsForMilestone(uint256,uint256)": FunctionFragment;
     "campaignContributions(uint256,address)": FunctionFragment;
     "campaigns(uint256)": FunctionFragment;
+    "checkAndAdvanceMilestone(uint256)": FunctionFragment;
     "contributeToCampaign(uint256)": FunctionFragment;
     "createCampaign(address,uint256,uint256)": FunctionFragment;
     "daoAddress()": FunctionFragment;
     "escAccount()": FunctionFragment;
     "getCampaignStatus(uint256)": FunctionFragment;
     "getDaoAddress()": FunctionFragment;
+    "getMilestoneCount(uint256)": FunctionFragment;
+    "getMilestoneDetails(uint256,uint256)": FunctionFragment;
     "owner()": FunctionFragment;
-    "refundContributors(uint256)": FunctionFragment;
     "rejectCampaign(uint256)": FunctionFragment;
     "releaseMilestone(uint256,uint256)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "setDAOAddress(address)": FunctionFragment;
+    "setMilestoneStatus(uint256,uint256,uint8)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
   };
 
@@ -54,18 +57,21 @@ export interface EscrowInterface extends utils.Interface {
       | "calculateTotalContributionsForMilestone"
       | "campaignContributions"
       | "campaigns"
+      | "checkAndAdvanceMilestone"
       | "contributeToCampaign"
       | "createCampaign"
       | "daoAddress"
       | "escAccount"
       | "getCampaignStatus"
       | "getDaoAddress"
+      | "getMilestoneCount"
+      | "getMilestoneDetails"
       | "owner"
-      | "refundContributors"
       | "rejectCampaign"
       | "releaseMilestone"
       | "renounceOwnership"
       | "setDAOAddress"
+      | "setMilestoneStatus"
       | "transferOwnership"
   ): FunctionFragment;
 
@@ -83,6 +89,10 @@ export interface EscrowInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "campaigns",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "checkAndAdvanceMilestone",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -109,11 +119,15 @@ export interface EscrowInterface extends utils.Interface {
     functionFragment: "getDaoAddress",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "refundContributors",
+    functionFragment: "getMilestoneCount",
     values: [BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "getMilestoneDetails",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "rejectCampaign",
     values: [BigNumberish]
@@ -129,6 +143,10 @@ export interface EscrowInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "setDAOAddress",
     values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setMilestoneStatus",
+    values: [BigNumberish, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
@@ -149,6 +167,10 @@ export interface EscrowInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "campaigns", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "checkAndAdvanceMilestone",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "contributeToCampaign",
     data: BytesLike
   ): Result;
@@ -166,11 +188,15 @@ export interface EscrowInterface extends utils.Interface {
     functionFragment: "getDaoAddress",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "refundContributors",
+    functionFragment: "getMilestoneCount",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "getMilestoneDetails",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "rejectCampaign",
     data: BytesLike
@@ -188,26 +214,58 @@ export interface EscrowInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setMilestoneStatus",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
 
   events: {
+    "AllMilestonesReceived(uint256)": EventFragment;
+    "CampaignCompleted(uint256)": EventFragment;
     "CampaignCreated(uint256,address,uint256)": EventFragment;
     "CampaignStatusChanged(uint256,uint8)": EventFragment;
     "ContributionReceived(address,uint256,uint256)": EventFragment;
+    "MilestoneReached(uint256,uint256)": EventFragment;
     "MilestoneUpdated(uint256,uint256,uint8)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "RefundIssued(uint256,address,uint256)": EventFragment;
   };
 
+  getEvent(nameOrSignatureOrTopic: "AllMilestonesReceived"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "CampaignCompleted"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "CampaignCreated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "CampaignStatusChanged"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "ContributionReceived"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "MilestoneReached"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "MilestoneUpdated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RefundIssued"): EventFragment;
 }
+
+export interface AllMilestonesReceivedEventObject {
+  campaignId: BigNumber;
+}
+export type AllMilestonesReceivedEvent = TypedEvent<
+  [BigNumber],
+  AllMilestonesReceivedEventObject
+>;
+
+export type AllMilestonesReceivedEventFilter =
+  TypedEventFilter<AllMilestonesReceivedEvent>;
+
+export interface CampaignCompletedEventObject {
+  campaignId: BigNumber;
+}
+export type CampaignCompletedEvent = TypedEvent<
+  [BigNumber],
+  CampaignCompletedEventObject
+>;
+
+export type CampaignCompletedEventFilter =
+  TypedEventFilter<CampaignCompletedEvent>;
 
 export interface CampaignCreatedEventObject {
   campaignId: BigNumber;
@@ -245,6 +303,18 @@ export type ContributionReceivedEvent = TypedEvent<
 
 export type ContributionReceivedEventFilter =
   TypedEventFilter<ContributionReceivedEvent>;
+
+export interface MilestoneReachedEventObject {
+  campaignId: BigNumber;
+  milestoneIndex: BigNumber;
+}
+export type MilestoneReachedEvent = TypedEvent<
+  [BigNumber, BigNumber],
+  MilestoneReachedEventObject
+>;
+
+export type MilestoneReachedEventFilter =
+  TypedEventFilter<MilestoneReachedEvent>;
 
 export interface MilestoneUpdatedEventObject {
   campaignId: BigNumber;
@@ -331,13 +401,19 @@ export interface Escrow extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, string, BigNumber, number] & {
+      [BigNumber, string, BigNumber, number, BigNumber] & {
         id: BigNumber;
         beneficiary: string;
         totalAmount: BigNumber;
         status: number;
+        currentIndex: BigNumber;
       }
     >;
+
+    checkAndAdvanceMilestone(
+      campaignId: BigNumberish,
+      overrides?: Overrides & { from?: string }
+    ): Promise<ContractTransaction>;
 
     contributeToCampaign(
       _campaignId: BigNumberish,
@@ -362,12 +438,18 @@ export interface Escrow extends BaseContract {
 
     getDaoAddress(overrides?: CallOverrides): Promise<[string]>;
 
-    owner(overrides?: CallOverrides): Promise<[string]>;
-
-    refundContributors(
+    getMilestoneCount(
       _campaignId: BigNumberish,
-      overrides?: Overrides & { from?: string }
-    ): Promise<ContractTransaction>;
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
+    getMilestoneDetails(
+      _campaignId: BigNumberish,
+      _milestoneIndex: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, number] & { amount: BigNumber; status: number }>;
+
+    owner(overrides?: CallOverrides): Promise<[string]>;
 
     rejectCampaign(
       _campaignId: BigNumberish,
@@ -386,6 +468,13 @@ export interface Escrow extends BaseContract {
 
     setDAOAddress(
       _daoAddress: string,
+      overrides?: Overrides & { from?: string }
+    ): Promise<ContractTransaction>;
+
+    setMilestoneStatus(
+      _campaignId: BigNumberish,
+      _milestoneIndex: BigNumberish,
+      _status: BigNumberish,
       overrides?: Overrides & { from?: string }
     ): Promise<ContractTransaction>;
 
@@ -416,13 +505,19 @@ export interface Escrow extends BaseContract {
     arg0: BigNumberish,
     overrides?: CallOverrides
   ): Promise<
-    [BigNumber, string, BigNumber, number] & {
+    [BigNumber, string, BigNumber, number, BigNumber] & {
       id: BigNumber;
       beneficiary: string;
       totalAmount: BigNumber;
       status: number;
+      currentIndex: BigNumber;
     }
   >;
+
+  checkAndAdvanceMilestone(
+    campaignId: BigNumberish,
+    overrides?: Overrides & { from?: string }
+  ): Promise<ContractTransaction>;
 
   contributeToCampaign(
     _campaignId: BigNumberish,
@@ -447,12 +542,18 @@ export interface Escrow extends BaseContract {
 
   getDaoAddress(overrides?: CallOverrides): Promise<string>;
 
-  owner(overrides?: CallOverrides): Promise<string>;
-
-  refundContributors(
+  getMilestoneCount(
     _campaignId: BigNumberish,
-    overrides?: Overrides & { from?: string }
-  ): Promise<ContractTransaction>;
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  getMilestoneDetails(
+    _campaignId: BigNumberish,
+    _milestoneIndex: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<[BigNumber, number] & { amount: BigNumber; status: number }>;
+
+  owner(overrides?: CallOverrides): Promise<string>;
 
   rejectCampaign(
     _campaignId: BigNumberish,
@@ -471,6 +572,13 @@ export interface Escrow extends BaseContract {
 
   setDAOAddress(
     _daoAddress: string,
+    overrides?: Overrides & { from?: string }
+  ): Promise<ContractTransaction>;
+
+  setMilestoneStatus(
+    _campaignId: BigNumberish,
+    _milestoneIndex: BigNumberish,
+    _status: BigNumberish,
     overrides?: Overrides & { from?: string }
   ): Promise<ContractTransaction>;
 
@@ -501,13 +609,19 @@ export interface Escrow extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, string, BigNumber, number] & {
+      [BigNumber, string, BigNumber, number, BigNumber] & {
         id: BigNumber;
         beneficiary: string;
         totalAmount: BigNumber;
         status: number;
+        currentIndex: BigNumber;
       }
     >;
+
+    checkAndAdvanceMilestone(
+      campaignId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     contributeToCampaign(
       _campaignId: BigNumberish,
@@ -532,12 +646,18 @@ export interface Escrow extends BaseContract {
 
     getDaoAddress(overrides?: CallOverrides): Promise<string>;
 
-    owner(overrides?: CallOverrides): Promise<string>;
-
-    refundContributors(
+    getMilestoneCount(
       _campaignId: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<void>;
+    ): Promise<BigNumber>;
+
+    getMilestoneDetails(
+      _campaignId: BigNumberish,
+      _milestoneIndex: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, number] & { amount: BigNumber; status: number }>;
+
+    owner(overrides?: CallOverrides): Promise<string>;
 
     rejectCampaign(
       _campaignId: BigNumberish,
@@ -557,6 +677,13 @@ export interface Escrow extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    setMilestoneStatus(
+      _campaignId: BigNumberish,
+      _milestoneIndex: BigNumberish,
+      _status: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     transferOwnership(
       newOwner: string,
       overrides?: CallOverrides
@@ -564,6 +691,20 @@ export interface Escrow extends BaseContract {
   };
 
   filters: {
+    "AllMilestonesReceived(uint256)"(
+      campaignId?: BigNumberish | null
+    ): AllMilestonesReceivedEventFilter;
+    AllMilestonesReceived(
+      campaignId?: BigNumberish | null
+    ): AllMilestonesReceivedEventFilter;
+
+    "CampaignCompleted(uint256)"(
+      campaignId?: BigNumberish | null
+    ): CampaignCompletedEventFilter;
+    CampaignCompleted(
+      campaignId?: BigNumberish | null
+    ): CampaignCompletedEventFilter;
+
     "CampaignCreated(uint256,address,uint256)"(
       campaignId?: BigNumberish | null,
       beneficiary?: string | null,
@@ -594,6 +735,15 @@ export interface Escrow extends BaseContract {
       amount?: null,
       campaignId?: BigNumberish | null
     ): ContributionReceivedEventFilter;
+
+    "MilestoneReached(uint256,uint256)"(
+      campaignId?: BigNumberish | null,
+      milestoneIndex?: null
+    ): MilestoneReachedEventFilter;
+    MilestoneReached(
+      campaignId?: BigNumberish | null,
+      milestoneIndex?: null
+    ): MilestoneReachedEventFilter;
 
     "MilestoneUpdated(uint256,uint256,uint8)"(
       campaignId?: BigNumberish | null,
@@ -650,6 +800,11 @@ export interface Escrow extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    checkAndAdvanceMilestone(
+      campaignId: BigNumberish,
+      overrides?: Overrides & { from?: string }
+    ): Promise<BigNumber>;
+
     contributeToCampaign(
       _campaignId: BigNumberish,
       overrides?: PayableOverrides & { from?: string }
@@ -673,12 +828,18 @@ export interface Escrow extends BaseContract {
 
     getDaoAddress(overrides?: CallOverrides): Promise<BigNumber>;
 
-    owner(overrides?: CallOverrides): Promise<BigNumber>;
-
-    refundContributors(
+    getMilestoneCount(
       _campaignId: BigNumberish,
-      overrides?: Overrides & { from?: string }
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    getMilestoneDetails(
+      _campaignId: BigNumberish,
+      _milestoneIndex: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     rejectCampaign(
       _campaignId: BigNumberish,
@@ -697,6 +858,13 @@ export interface Escrow extends BaseContract {
 
     setDAOAddress(
       _daoAddress: string,
+      overrides?: Overrides & { from?: string }
+    ): Promise<BigNumber>;
+
+    setMilestoneStatus(
+      _campaignId: BigNumberish,
+      _milestoneIndex: BigNumberish,
+      _status: BigNumberish,
       overrides?: Overrides & { from?: string }
     ): Promise<BigNumber>;
 
@@ -729,6 +897,11 @@ export interface Escrow extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    checkAndAdvanceMilestone(
+      campaignId: BigNumberish,
+      overrides?: Overrides & { from?: string }
+    ): Promise<PopulatedTransaction>;
+
     contributeToCampaign(
       _campaignId: BigNumberish,
       overrides?: PayableOverrides & { from?: string }
@@ -752,12 +925,18 @@ export interface Escrow extends BaseContract {
 
     getDaoAddress(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    refundContributors(
+    getMilestoneCount(
       _campaignId: BigNumberish,
-      overrides?: Overrides & { from?: string }
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
+
+    getMilestoneDetails(
+      _campaignId: BigNumberish,
+      _milestoneIndex: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     rejectCampaign(
       _campaignId: BigNumberish,
@@ -776,6 +955,13 @@ export interface Escrow extends BaseContract {
 
     setDAOAddress(
       _daoAddress: string,
+      overrides?: Overrides & { from?: string }
+    ): Promise<PopulatedTransaction>;
+
+    setMilestoneStatus(
+      _campaignId: BigNumberish,
+      _milestoneIndex: BigNumberish,
+      _status: BigNumberish,
       overrides?: Overrides & { from?: string }
     ): Promise<PopulatedTransaction>;
 

@@ -5,6 +5,7 @@ import { moveBlocks, moveTime } from "../helpers";
 import { log } from "console";
 
 import * as fs from "fs";
+import { BigNumber } from "ethers";
 
 export async function queueAndExec(proposalID: string) {
 
@@ -21,62 +22,101 @@ export async function queueAndExec(proposalID: string) {
     console.log(`Governor address: ${governor.address}`);
     console.log(`Escrow address: ${escrow.address}`);
 
-    // const campaignId = 1;  //recheck
-    // const milestoneIndex = 0; // recheck
-    const proposalDescription = "Support local charity"; 
+    const campaignStatus = await escrow.getCampaignStatus(campaignId);
+    const CamstatusString = ["PENDING", "ACTIVE", "COMPLETED", "REJECTED"][campaignStatus];
+    console.log(`Campaign Status: ${CamstatusString}`);
 
-    const encodedFunctionCall = governor.interface.encodeFunctionData("approveCampaign", [campaignId]); // campaign id in args
-    const descriptionHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(proposalDescription));
-
-    log("Queueing release proposal...");
-
+    // const proposalDescription = "Support local charity"; 
     const status = await escrow.getCampaignStatus(campaignId);
-    console.log(`Campaign Status: ${escrow.getCampaignStatus(campaignId)}`);
+    const statusString = ["PENDING", "ACTIVE", "COMPLETED", "REJECTED"][status];
+    console.log(`Campaign Status: ${statusString}`);
 
-    if (status.toString() !== escrow.getCampaignStatus(campaignId)) {
-        console.log("Campaign is not in ACTIVE status.");
-        const approve = await escrow.approveCampaign(campaignId);
-        await approve.wait(1);
-        console.log(`Campaign approved: ${approve}`);
-    }
+    const contributionAmount = ethers.utils.parseEther("3"); 
+    console.log(`Contributing ${ethers.utils.formatEther(contributionAmount)} ETH to campaign ID ${campaignId}`);
+    const contributeTx = await escrow.contributeToCampaign(campaignId, { value: contributionAmount });
+    await contributeTx.wait();
+    console.log(`Contribution to campaign ID ${campaignId} successful`);
 
-   const proposalState = await governor.state("64211841402750563409348020008446934387029839689634311668291959018123029582102");
+    if (CamstatusString ==="ACTIVE") {
+        const result = await escrow.getMilestoneDetails(campaignId, milestoneIndex);
+        const milestoneStatus = ["PENDING", "RELEASED", "REFUNDED"][result[1]];
+        const amount = result[0];
+
+        console.log('current status of milestone ${milestoneIndex} is: ', milestoneStatus);
+        console.log('amount of milestone ${milestoneIndex} is: ', amount.toString());
+        console.log(`Milestone ${milestoneIndex} for campaign ${campaignId} has ${ethers.utils.formatEther(amount)} ETH allocated.`);
+
+        const campaignDetails = await escrow.campaigns(campaignId);
+        const milestoneCount = 3;
+
+        for (let i = 0; i < milestoneCount; i++){
+            console.log("Releasing milestone due to sufficient contributions...");
+            if (milestoneStatus === "PENDING"){
+                const totalContributions = await escrow.calculateTotalContributionsForMilestone(campaignId, milestoneIndex);
+                console.log(`Total contributions for Milestone ${milestoneIndex}: ${ethers.utils.formatEther(totalContributions)} ETH`);
+                if (totalContributions.gte(amount)){
+                    console.log(`Releasing Milestone ${i+1}...`);
+                    const releaseTx = await escrow.releaseMilestone(campaignId, milestoneIndex);
+                    await releaseTx.wait();
+                    console.log(`Milestone ${i+1} is ${milestoneStatus}.`);
+                } else {
+                    console.log(`Milestone ${i+1} is not ready to be released.`);
+                }
+            }
+        } 
+    } 
+    console.log("checking if all released");
+    const txCheck = await escrow.checkAndAdvanceMilestone(campaignId);
+    await txCheck.await();
+    console.log(`Milestone ${milestoneIndex} is released.`);
+
+    // const encodedFunctionCall = governor.interface.encodeFunctionData("releaseMilestone", [campaignId, milestoneIndex]); // campaign id in args
+    // const descriptionHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(proposalDescription));
+
+    // log("Queueing release proposal...");
+
+
+   const proposalState = await governor.state(proposalID);
    console.log("Proposal state: ", proposalState.toString());
    console.log("Proposal id: ", proposalID);
 
    console.log("proposal is in active state.");
-    const queueTx = await governor.queue(
-        [escrowAddress],
-        [0],
-        [encodedFunctionCall],
-        descriptionHash,
-        { gasLimit: 5000000});
+   escrow.on("AllMilestonesReceived", (campaignId) => {
+        console.log(`All milestones for campaign ID ${campaignId} have been released.`);
+    });
+    console.log(`Campaign Status: ${statusString}`);
+    // const queueTx = await governor.queue(
+    //     [escrowAddress],
+    //     [0],
+    //     [encodedFunctionCall],
+    //     descriptionHash,
+    //     { gasLimit: 5000000});
 
-    console.log("1: proposal in queue.");
+    // console.log("1: proposal in queue.");
 
-    await queueTx.wait(1);
+    // await queueTx.wait(1);
 
-    console.log("proposal in queue.");
+    // console.log("proposal in queue.");
 
 
-    if(developmentChains.includes(network.name)){
-        await moveTime(MIN_DELAY +1);
-        await moveBlocks(1);
-    }
+    // if(developmentChains.includes(network.name)){
+    //     await moveTime(MIN_DELAY +1);
+    //     await moveBlocks(1);
+    // }
 
-    console.log("executing proposal...");
+    // console.log("executing proposal...");
 
-    const executeTX = await governor.execute(
-        [escrowAddress],
-        [0],
-        [encodedFunctionCall],
-        descriptionHash,
-        { gasLimit: 5000000}
-    );
+    // const executeTX = await governor.execute(
+    //     [escrowAddress],
+    //     [0],
+    //     [encodedFunctionCall],
+    //     descriptionHash,
+    //     { gasLimit: 5000000}
+    // );
 
-    await executeTX.wait(1);
+    // await executeTX.wait(1);
 
-    console.log("executed");
+    // console.log("executed");
         
     // console.log('escrow value is ' + await escrow.retrieve());
 
