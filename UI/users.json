@@ -1,0 +1,34 @@
+{
+  "users": [
+    {
+      "id": "",
+      "password": "",
+      "donations": [
+        {
+          "ethAmount": "",
+          "distribution": [
+            {
+              "campaign": "",
+              "percentage": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1",
+      "password": "123"
+    },
+    {
+      "donations": [
+        {
+          "ethAmount": 2,
+          "distribution": [
+            "50% education",
+            "50% health"
+          ]
+        }
+      ]
+    }
+  ]
+}

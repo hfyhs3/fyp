@@ -67,7 +67,7 @@ export async function queueAndExec(proposalID: string) {
     } 
     console.log("checking if all released");
     const txCheck = await escrow.checkAndAdvanceMilestone(campaignId);
-    await txCheck.await();
+    await txCheck.wait(1);
     console.log(`Milestone ${milestoneIndex} is released.`);
 
     // const encodedFunctionCall = governor.interface.encodeFunctionData("releaseMilestone", [campaignId, milestoneIndex]); // campaign id in args
