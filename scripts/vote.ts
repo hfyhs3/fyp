@@ -38,14 +38,26 @@ export async function vote(proposalID: string, voteType: number = VOTE_YES) {
     console.log("proposal state after is: ", proposalState);
 }
 
-const proposals= JSON.parse(fs.readFileSync(PROPOSAL_FILE, "utf8"));
-const networkProposals = proposals[network.config.chainId!];
+const proposals = JSON.parse(fs.readFileSync(PROPOSAL_FILE, "utf8"));
 
-if (!networkProposals) {
-    console.log("No proposals found for this network");
+// Assuming the chainId is something like '31337', adjust as necessary for your setup
+const chainId = network.config.chainId!.toString();
+
+if (!proposals[chainId] || !Array.isArray(proposals[chainId].campaigns)) {
+    console.log(`No proposals found for chain ID ${chainId} or 'campaigns' is not an array`);
     process.exit(0);
-  }
-  const proposalID = networkProposals[1]; // the 0 has been changed to 1 as the new proposal id is created
-  console.log("Proposal ID: ", proposalID);
+}
+
+// Now you can safely use map since you checked it's an array
+const networkProposals = proposals[chainId].campaigns.map(campaign => campaign.proposalId);
+
+// Make sure we have at least one proposal ID
+if (networkProposals.length === 0) {
+    console.log(`No proposal IDs found for chain ID ${chainId}`);
+    process.exit(0);
+}
+
+const proposalID = networkProposals[0]; // Use the first proposal ID for voting
+console.log("Proposal ID: ", proposalID);
   
 vote(proposalID).then(() => process.exit(0)).catch(err => {console.log(err), process.exit(1)});

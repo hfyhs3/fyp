@@ -1,0 +1,19 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "password": "123"
+    },
+    {
+      "donations": [
+        {
+          "ethAmount": 2,
+          "distribution": [
+            "50% Food",
+            "50% Health"
+          ]
+        }
+      ]
+    }
+  ]
+}

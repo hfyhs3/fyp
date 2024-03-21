@@ -2224,8 +2224,8 @@
       ]
     },
     "C:\\Users\\hoors\\dao-fyp\\contracts\\Escrow.sol": {
-      "lastModificationDate": 1709669664090,
-      "contentHash": "becd1e62ef790fbbed6fb0ae60c46f8a",
+      "lastModificationDate": 1711037950998,
+      "contentHash": "9bba2dfa6f60f4623588f64657174812",
       "sourceName": "contracts/Escrow.sol",
       "solcConfig": {
         "version": "0.8.19",

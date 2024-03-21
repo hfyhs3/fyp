@@ -12,6 +12,7 @@ contract Escrow is Ownable {
 
     using Counters for Counters.Counter;
     Counters.Counter private _campaignIdCounter;
+    receive() external payable {}
 
     Counters.Counter private _itemIdCounter;
     // enum Available {NO, YES}
@@ -25,12 +26,35 @@ contract Escrow is Ownable {
     enum MilestoneStatus {
         PENDING,
         RELEASED,
-        REFUNDED
+        REFUNDED,
+        PAID,
+        VERIFIED
+    }
+
+    struct TransactionHistory {
+        uint workers;
+        uint materialCost;
+        uint daysTaken;
+    }
+
+    struct DonorSpecification{
+        uint milestoneIndex;
+        string milestoneDescription;
+        uint256 targetAmount;
     }
 
     struct Milestone{
         uint amount;
         MilestoneStatus status;
+        TransactionHistory history;
+        string description;
+
+        //service requests
+        string serviceDescription;
+        address serviceProvider;
+        //service completion
+        bool serviceComplete;
+        Billing billing;
     }
     struct Campaign {
         uint id;
@@ -42,25 +66,48 @@ contract Escrow is Ownable {
         mapping(address => uint) contributions;
     }
 
+    struct Billing {
+        uint workersCost;
+        uint materialsCost;
+        uint totalCost;
+        bool isSubmitted;
+        bool isConfirmed;
+    }
+
+
     address public escAccount;
     address public daoAddress;
     // GovernorContract public dao;
 
     mapping(uint => Campaign) public campaigns;
-
+    mapping(uint => DonorSpecification[]) public donorSpecs;
+    mapping(string => address) public serviceProviders;
     mapping(uint => mapping(address => uint)) public campaignContributions;
     mapping(uint => address[]) private campaignContributors;
 
 
+    // campaign events
     event CampaignCreated(uint indexed campaignId, address indexed beneficiary, uint totalAmount);
     event CampaignStatusChanged(uint indexed campaignId, CampaignStatus status);
+    event CampaignCompleted(uint indexed campaignId);
+
+    //milestone events
     event MilestoneUpdated(uint indexed campaignId, uint milestoneIndex, MilestoneStatus status);
-    event ContributionReceived(address indexed contributor, uint amount, uint indexed campaignId);
+    event ContributionReceived(address indexed contributor, uint amount, uint indexed campaignId, uint indexed milestoneIndex, string description, uint targetAmount);
+    event TransactionHistUpdate(uint indexed campaignId, uint indexed milestoneIndex);
+    event MilestoneVerified(uint indexed campaignId, uint milestoneIndex);
     event RefundIssued(uint id, address contributor, uint refundAmt);
     event AllMilestonesReceived(uint indexed campaignId);
-
+    event MilestoneDescriptionUpdated(uint indexed campaignId, uint indexed milestoneIndex, string description);
     event MilestoneReached(uint indexed campaignId, uint milestoneIndex);
-    event CampaignCompleted(uint indexed campaignId);
+    
+    // service provider events
+    event ServiceProviderPaid(uint indexed campaignId, uint indexed milestoneIndex, address serviceProvider, uint amount, uint remainingAmount);
+    event ServiceRequested(uint indexed campaignId, uint indexed milestoneIndex, string serviceDescription, address serviceProvider);
+    event ServiceCompletionSubmitted(uint indexed campaignId, uint indexed milestoneIndex, address serviceProvider);
+    event BillingSubmitted(uint indexed campaignId, uint indexed milestoneIndex, uint workersCost, uint materialsCost, uint totalCost);
+    event BillingConfirmed(uint indexed campaignId, uint indexed milestoneIndex);
+
 
 
     constructor(address payable initialOwner, address _daoAddress, address _escAccount) Ownable() {
@@ -78,6 +125,13 @@ contract Escrow is Ownable {
     //     _;
     // }
 
+    function setMilestoneDescription(uint _campaignId, uint _milestoneIndex, string memory _description) public {
+        // Only the campaign owner or an authorized account can set the description
+        Milestone storage milestone = campaigns[_campaignId].milestones[_milestoneIndex];
+        milestone.description = _description;
+        emit MilestoneDescriptionUpdated(_campaignId, _milestoneIndex, _description);
+    }
+
     function getMilestoneCount(uint _campaignId) public view returns (uint) {
         return campaigns[_campaignId].milestones.length;
     }
@@ -86,6 +140,16 @@ contract Escrow is Ownable {
         Campaign storage campaign = campaigns[_campaignId];
         Milestone storage milestone = campaign.milestones[_milestoneIndex];
         return (milestone.amount, milestone.status);
+    }
+
+    function getDetails(uint campaignId) public view returns (int ){
+        Campaign storage campaign = campaigns[campaignId];
+        for (uint i = 0; i < campaign.milestones.length; i++){
+            if (campaign.milestones[i].status == MilestoneStatus.PENDING){
+                return int(i);
+            }
+        }
+        return -1;
     }
 
     function setMilestoneStatus(uint _campaignId, uint _milestoneIndex, MilestoneStatus _status) public {
@@ -128,11 +192,25 @@ contract Escrow is Ownable {
         newCampaign.currentIndex = 1;
 
         for (uint i = 0; i < _milestoneCount; i++) {
-            newCampaign.milestones.push(Milestone( _totalAmount / _milestoneCount, MilestoneStatus.PENDING ));
+            TransactionHistory memory history = TransactionHistory({
+                workers: 0,
+                materialCost: 0,
+                daysTaken: 0
+            });
+            newCampaign.milestones.push(Milestone({
+                amount: _totalAmount / _milestoneCount,
+                status: MilestoneStatus.PENDING,
+                history: TransactionHistory({workers: 0, materialCost: 0, daysTaken: 0}),
+                description: "",
+                serviceDescription: "",
+                serviceProvider: address(0), // Assuming an empty address for initialization
+                serviceComplete: false, // Assuming false for initialization
+                billing: Billing({workersCost: 0, materialsCost: 0, totalCost: 0, isSubmitted: false, isConfirmed: false})
+            }));        
+                
         }
 
         emit CampaignCreated(newCampaignId, _beneficiary, _totalAmount);
-
     }
 
     function approveCampaign(uint _campaignId) external {
@@ -154,41 +232,85 @@ contract Escrow is Ownable {
         //MANAGE REFUNDS IF ANY MADE IF CAMPAIGN WAS APPROVED THEN REJECTED LATER
     }
 
-    function contributeToCampaign(uint _campaignId) public payable {
+    function contributeToCampaign(uint _campaignId, uint _milestoneIndex, string memory _description, uint _amount) public payable {
         Campaign storage campaign = campaigns[_campaignId];
         require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
         require(msg.value > 0, "Contribution must be greater than zero.");
 
         campaign.contributions[msg.sender] += msg.value;
-        emit ContributionReceived(msg.sender, msg.value, _campaignId);
+        donorSpecs[_campaignId].push(DonorSpecification({
+        milestoneIndex: _milestoneIndex,
+        milestoneDescription: _description,
+        targetAmount: _amount
+        }));
+        emit ContributionReceived(msg.sender, msg.value, _campaignId, _milestoneIndex, _description, _amount);
     }
 
+    // 6. release milestone
     function releaseMilestone(uint _campaignId, uint _milestoneIndex) external {
         Campaign storage campaign = campaigns[_campaignId];
         require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
         Milestone storage milestone = campaign.milestones[_milestoneIndex];
         require(milestone.amount > 0, "Milestone has no funds allocated.");
+        require(milestone.status == MilestoneStatus.VERIFIED, "Milestone must be verified before release.");
         // milestone.status = MilestoneStatus.PENDING;
 
-        // error here
         payable(campaign.beneficiary).transfer(milestone.amount);
+
+        milestone.status = MilestoneStatus.RELEASED;
+        emit MilestoneUpdated(_campaignId, _milestoneIndex, MilestoneStatus.RELEASED);
 
         bool allMilestonesReleased = true;
         for (uint i = 0; i < campaign.milestones.length; i++) {
-            if (campaign.milestones[i].status == MilestoneStatus.PENDING && milestone.amount > 0) {
-                campaign.milestones[i].status = MilestoneStatus.RELEASED;
-                emit MilestoneUpdated(_campaignId, i, MilestoneStatus.RELEASED);
-            }
             if (milestone.status != MilestoneStatus.RELEASED) {
                 allMilestonesReleased = false;
                 break;
             }
         }
+
+        
         if (allMilestonesReleased) {
             campaign.status = CampaignStatus.COMPLETED;
             emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
             emit AllMilestonesReceived(_campaignId);
         }
+    }
+
+    /**
+    Allows beneficiaries to input detailed transaction history for each milestone */
+
+    function VerifyTransaction(uint _campaignId, uint _milestoneIndex, uint _workers, uint _materialCost, uint _daysTaken) public {
+        Campaign storage campaign = campaigns[_campaignId];
+        require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
+        Milestone storage milestone = campaign.milestones[_milestoneIndex];
+        require(milestone.status == MilestoneStatus.PAID, "Milestone must be paid before verification.");
+        milestone.history = TransactionHistory(_workers, _materialCost, _daysTaken);
+        milestone.status = MilestoneStatus.VERIFIED;
+        emit MilestoneVerified(_campaignId, _milestoneIndex);
+    }
+
+    /**
+    A function to verify that a milestone has been completed before funds are released */
+
+    // function verifyMilestone(uint _campaignId, uint _milestoneIndex) public {
+    //     // Only a trusted verifier or the contract owner can verify a milestone
+    //     // require(msg.sender == owner(), "Only the owner can verify milestones");
+
+    //     Campaign storage campaign = campaigns[_campaignId];
+    //     require(_milestoneIndex < campaign.milestones.length, "Invalid milestone index");
+        
+    //     Milestone storage milestone = campaign.milestones[_milestoneIndex];
+    //     require(milestone.status == MilestoneStatus.PENDING, "Milestone must be pending to be verified");
+
+    //     milestone.status = MilestoneStatus.VERIFIED;
+    //     emit MilestoneVerified(_campaignId, _milestoneIndex);
+    // }
+
+    function getTransactionHistory(uint _campaignId, uint _milestoneIndex) public view returns (TransactionHistory memory) {
+        Campaign storage campaign = campaigns[_campaignId];
+        require(_milestoneIndex < campaign.milestones.length, "Invalid milestone index");
+        
+        return campaign.milestones[_milestoneIndex].history;
     }
 
     function checkAndAdvanceMilestone(uint campaignId) public {
@@ -208,35 +330,35 @@ contract Escrow is Ownable {
         }
      }
 
-    // function refundContributors(uint _campaignId) public  {
-    //     Campaign storage campaign = campaigns[_campaignId];
-    //     require(campaign.status == CampaignStatus.REJECTED || (campaign.status == CampaignStatus.COMPLETED && campaign.totalAmount > address(this).balance), "Invalid campaign status for refund.");        
+    function refundContributors(uint _campaignId) public  {
+        Campaign storage campaign = campaigns[_campaignId];
+        require(campaign.status == CampaignStatus.REJECTED || (campaign.status == CampaignStatus.COMPLETED && campaign.totalAmount > address(this).balance), "Invalid campaign status for refund.");        
 
-    //     address[] storage contributors = campaignContributors[_campaignId];
+        address[] storage contributors = campaignContributors[_campaignId];
 
-    //     for (uint256 i = 0; i < contributors.length; i++) {
-    //         address contributor = contributors[i];
-    //         uint contribution = campaignContributions[_campaignId][contributor];
-    //         if (contribution > 0){
-    //             uint refundAmount = (contribution * 98) / 100; //2% flat rate deduction from the refund amount
+        for (uint256 i = 0; i < contributors.length; i++) {
+            address contributor = contributors[i];
+            uint contribution = campaignContributions[_campaignId][contributor];
+            if (contribution > 0){
+                uint refundAmount = (contribution * 98) / 100; //2% flat rate deduction from the refund amount
 
-    //             campaignContributions[_campaignId][contributor] = 0; //resetting value to prevent re-entrancy attacks
+                campaignContributions[_campaignId][contributor] = 0; //resetting value to prevent re-entrancy attacks
 
-    //             (bool sent, ) = contributor.call{value:refundAmount}("");
-    //             require(sent, "failed to send refund");
+                (bool sent, ) = contributor.call{value:refundAmount}("");
+                require(sent, "failed to send refund");
 
-    //             emit RefundIssued(_campaignId, contributor, refundAmount);
+                emit RefundIssued(_campaignId, contributor, refundAmount);
 
 
-    //         }
-    //     }
+            }
+        }
         
-    //     if (campaign.status != CampaignStatus.COMPLETED){
-    //         campaign.status = CampaignStatus.COMPLETED;
-    //         emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
+        if (campaign.status != CampaignStatus.COMPLETED){
+            campaign.status = CampaignStatus.COMPLETED;
+            emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
 
-    //     }
-    // }
+        }
+    }
 
     // Utility function to get contributors list for a campaign
     function calculateTotalContributionsForMilestone(uint _campaignId, uint _milestoneIndex) public view returns (uint256) { 
@@ -255,5 +377,124 @@ contract Escrow is Ownable {
         return totalContributionsForMilestone; 
     }
 
+    /**
+    Allow donor to view details of campaign they have contributed to */
+    function viewCampaignDetails(uint _campaignId) public view returns (
+        uint id,
+        address beneficiary,
+        uint totalAmount,
+        CampaignStatus status,
+        uint milestoneCount
+    ) {
+        Campaign storage campaign = campaigns[_campaignId];
+        require(campaign.contributions[msg.sender] > 0, "You have not contributed to this campaign.");
+        return (
+            campaign.id,
+            campaign.beneficiary,
+            campaign.totalAmount,
+            campaign.status,
+            campaign.milestones.length
+        );
+    }
+
+    /**
+     * Allows a donor to view the details and transaction history of a specific milestone within a campaign.
+     * @param _campaignId The ID of the campaign.
+     * @param _milestoneIndex The index of the milestone within the campaign.
+     */
+    function viewMilestoneDetails(uint _campaignId, uint _milestoneIndex) public view returns (
+        uint amount,
+        MilestoneStatus status,
+        uint workers,
+        uint materialCost,
+        uint daysTaken
+    ) {
+        Campaign storage campaign = campaigns[_campaignId];
+        require(_milestoneIndex < campaign.milestones.length, "Invalid milestone index.");
+        require(campaign.contributions[msg.sender] > 0, "You have not contributed to this campaign.");
+
+        Milestone storage milestone = campaign.milestones[_milestoneIndex];
+        return (
+            milestone.amount,
+            milestone.status,
+            milestone.history.workers,
+            milestone.history.materialCost,
+            milestone.history.daysTaken
+        );
+    }
+
+
+    // 1. request service first
+    function requestService(uint campaignId, uint milestoneIndex, string memory serviceDescription, address serviceProvider) public {
+        // require(campaigns[campaignId].beneficiary == msg.sender, "Only campaign beneficiary can request services");
+        require(milestoneIndex < campaigns[campaignId].milestones.length, "Invalid milestone index");
+        Milestone storage milestone = campaigns[campaignId].milestones[milestoneIndex];
+        require(milestone.status == MilestoneStatus.PENDING, "Service can only be requested for pending milestones");
+        
+        milestone.serviceDescription = serviceDescription;
+        milestone.serviceProvider = serviceProvider;
+        
+        emit ServiceRequested(campaignId, milestoneIndex, serviceDescription, serviceProvider);
+    }
+
+    // 4. pay service provider
+    function payServiceProvider(uint _campaignId, uint _milestoneIndex, address payable _serviceProvider) public {
+        // Ensure milestone is verified and funds are ready to be transferred
+        Campaign storage campaign = campaigns[_campaignId];
+        Milestone storage milestone = campaigns[_campaignId].milestones[_milestoneIndex];
+        require(milestone.status == MilestoneStatus.PENDING, "Milestone not verified");
+        require (campaign.totalAmount >= milestone.amount, "Insufficient funds in campaign" );
+
+        // Transfer funds to service provider
+        campaign.totalAmount -= milestone.amount;
+        _serviceProvider.transfer(milestone.amount);
+        milestone.status = MilestoneStatus.PAID; // Update status to indicate payment
+        emit ServiceProviderPaid(_campaignId, _milestoneIndex, _serviceProvider, milestone.amount, campaign.totalAmount);
+    }
+
+    // 2. submit billing
+    function submitBilling(uint campaignId, uint milestoneIndex, uint workersCost, uint materialsCost) public {
+        Milestone storage milestone = campaigns[campaignId].milestones[milestoneIndex];
+        uint totalCost = workersCost + materialsCost;
+        // require(totalCost <= milestone.amount, "Total cost exceeds the allocated milestone amount");
+
+        milestone.billing = Billing({
+            workersCost: workersCost,
+            materialsCost: materialsCost,
+            totalCost: totalCost,
+            isSubmitted: true,
+            isConfirmed: false
+        });
+
+        emit BillingSubmitted(campaignId, milestoneIndex, workersCost, materialsCost, totalCost);
+    }
+
+    // 3. confirm billing
+    function confirmBilling(uint campaignId, uint milestoneIndex) public {
+        Campaign storage campaign = campaigns[campaignId];
+        // require(campaign.beneficiary == msg.sender, "Only the campaign beneficiary can confirm billing");
+        
+        Milestone storage milestone = campaign.milestones[milestoneIndex];
+        require(milestone.billing.isSubmitted, "Billing must be submitted first");
+        require(!milestone.billing.isConfirmed, "Billing has already been confirmed");
+
+        milestone.billing.isConfirmed = true;
+
+        emit BillingConfirmed(campaignId, milestoneIndex);
+    }
+
+    // 5. submit service completion
+    function submitServiceCompletion(uint campaignId, uint milestoneIndex, address serviceProvider) public {
+        // require(campaigns[campaignId].milestones[milestoneIndex].serviceProvider == msg.sender, "Only assigned service provider can submit completion");
+        Milestone storage milestone = campaigns[campaignId].milestones[milestoneIndex];
+        require(milestone.billing.isConfirmed, "Billing must be confirmed before submitting service completion");
+        require(milestone.status == MilestoneStatus.PAID, "Service completion can only be submitted for paid milestones");
+
+        // Optionally, you can verify the details or require additional proof before marking as completed
+        milestone.status = MilestoneStatus.VERIFIED;
+        milestone.serviceComplete = true;
+        
+        emit ServiceCompletionSubmitted(campaignId, milestoneIndex, serviceProvider);
+    }
 
 }

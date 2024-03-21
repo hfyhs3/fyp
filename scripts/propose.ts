@@ -4,6 +4,12 @@ import { moveBlocks } from "../helpers";
 
 import * as fs from "fs";
 import * as path from "path";
+import readline from 'readline';
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+});
 
 const PROPOSAL_FILE_PATH = path.join(__dirname, "..", PROPOSAL_FILE);
 
@@ -20,30 +26,63 @@ function writeProposals(proposals: any){
     fs.writeFileSync(PROPOSAL_FILE_PATH, json);
 }
 
-function addProposalId(chainId: string, campaignId:string, proposalId: string){
+function addProposalId(chainId: string, campaignId:string, proposalId: string, campaignDetails: any){
     const proposals = readProposals();
     if (!proposals[chainId]) {
         proposals[chainId] = {};
     }
-    if (!proposals[chainId][campaignId]) {
-        proposals[chainId][campaignId] = proposalId;
-        console.log(`Associated proposal ID ${proposalId} with campaign ID ${campaignId} for network ${chainId}.`);
+    if (!proposals[chainId].campaigns) {
+        proposals[chainId].campaigns = [];
+    }
+    const existingCampaignIndex = proposals[chainId].campaigns.findIndex((c: any) => c.campaignId === campaignId);
+    if (existingCampaignIndex === -1) {
+        // Add new campaign with details
+        proposals[chainId].campaigns.push({
+            campaignId,
+            proposalId,
+            ...campaignDetails,
+        });
+        console.log(`Added campaign with ID ${campaignId} and associated proposal ID ${proposalId} for network ${chainId}.`);
     } else {
-        console.log(`Campaign ID ${campaignId} already associated with a proposal ID for network ${chainId}.`);
+        // Update existing campaign with new proposalId and details
+        proposals[chainId].campaigns[existingCampaignIndex] = {
+            ...proposals[chainId].campaigns[existingCampaignIndex],
+            proposalId,
+            ...campaignDetails,
+        };
+        console.log(`Updated campaign ID ${campaignId} with new proposal ID ${proposalId} for network ${chainId}.`);
     }
     writeProposals(proposals);
 }
+
+function question(query: string): Promise<string> {
+    return new Promise(resolve => rl.question(query, (answer) => resolve(answer)));
+}
+
 
 export async function  makeProposal ()
 {
     const [deployer] = await ethers.getSigners();
     const { get } = deployments;
 
-    const beneficiaryAddress = deployer.address; 
-    const totalAmount = ethers.utils.parseEther("3"); //recheck
+    const totalAmountInput = await question("Enter the total amount for the campaign (in ETH): ");
+    const totalAmount = ethers.utils.parseEther(totalAmountInput); 
     const milestoneCount = 3; // recheck
-    const campaignDescription = "Support local charity";
+    const campaignDescription = await question("Enter the campaign description: ");
 
+    rl.close();
+    const beneficiaryAddress =  deployer.address;
+    const completed: boolean = false;
+    const campaignDetails = {
+        beneficiaryAddress,
+        totalAmount,
+        description: campaignDescription,
+        milestones: Array(milestoneCount).fill(null).map((_, index) => ({
+            index: index + 1,
+            description: `Milestone ${index + 1} Description`, // Placeholder description
+            completed,
+        })),
+    };
 
     const governorDeployment = await get("GovernorContract");
     const governorAddress = governorDeployment.address;
@@ -114,7 +153,7 @@ export async function  makeProposal ()
     const proposalID = proposalIdEvent.args[0]; // Assuming the first argument is the proposal ID
     console.log("proposalID: " + proposalID.toString());
 
-    addProposalId(network.config.chainId!.toString(), campaignId, proposalID.toString());
+    addProposalId(network.config.chainId!.toString(), campaignId.toString(), proposalID.toString(), campaignDetails);
 }
 
 makeProposal()
