@@ -14,17 +14,23 @@
           {
             "index": 1,
             "description": "Milestone 1 Description",
-            "completed": true
+            "completed": true,
+            "serviceProivder": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            "serviceProvider": "0xEb62d1AcD9EA2c6a5425b42e3469b1E56ec29E7B"
           },
           {
             "index": 2,
             "description": "Milestone 2 Description",
-            "completed": false
+            "completed": true,
+            "serviceProivder": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            "serviceProvider": "0x25cdBE440130FADbb3C6516Ef50b73720612A817"
           },
           {
             "index": 3,
             "description": "Milestone 3 Description",
-            "completed": false
+            "completed": true,
+            "serviceProivder": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            "serviceProvider": "0x1628dC404a3d42055Cc64e5b988315E5Aad06320"
           }
         ]
       },

@@ -72,6 +72,7 @@ export async function  makeProposal ()
 
     rl.close();
     const beneficiaryAddress =  deployer.address;
+    const serviceProivder = deployer.address;
     const completed: boolean = false;
     const campaignDetails = {
         beneficiaryAddress,
@@ -81,6 +82,7 @@ export async function  makeProposal ()
             index: index + 1,
             description: `Milestone ${index + 1} Description`, // Placeholder description
             completed,
+            serviceProivder,
         })),
     };
 

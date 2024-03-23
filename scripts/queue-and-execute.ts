@@ -6,6 +6,9 @@ import { log } from "console";
 
 import * as fs from "fs";
 import { BigNumber } from "ethers";
+import path from "path";
+
+const proposalsPath = path.join(__dirname, "..", PROPOSAL_FILE);
 
 export async function queueAndExec(proposalID: string) {
 
@@ -21,6 +24,8 @@ export async function queueAndExec(proposalID: string) {
 
     console.log(`Governor address: ${governor.address}`);
     console.log(`Escrow address: ${escrow.address}`);
+    const currentMilestone = await escrow.getDetails(campaignId);
+    console.log('Current Milestone:', currentMilestone);
 
     const campaignStatus = await escrow.getCampaignStatus(campaignId);
     const CamstatusString = ["PENDING", "ACTIVE", "COMPLETED", "REJECTED"][campaignStatus];
@@ -31,39 +36,35 @@ export async function queueAndExec(proposalID: string) {
     const statusString = ["PENDING", "ACTIVE", "COMPLETED", "REJECTED"][status];
     console.log(`Campaign Status: ${statusString}`);
 
-
     if (CamstatusString ==="ACTIVE") {
         const result = await escrow.getMilestoneDetails(campaignId, milestoneIndex);
         const milestoneStatus = ["PENDING", "RELEASED", "REFUNDED", "PAID", "VERIFIED"][result[1]];
         const amount = result[0];
 
-        console.log('current status of milestone ${milestoneIndex} is: ', milestoneStatus);
-        console.log('amount of milestone ${milestoneIndex} is: ', amount.toString());
-        console.log(`Milestone ${milestoneIndex} for campaign ${campaignId} has ${ethers.utils.formatEther(amount)} ETH allocated.`);
+        console.log('current status of milestone', currentMilestone, ' is: ', milestoneStatus);
+        console.log('amount of milestone ', currentMilestone, ' is: ', amount.toString());
+        console.log(`Milestone ${currentMilestone} for campaign ${campaignId} has ${ethers.utils.formatEther(amount)} ETH allocated.`);
+        const signer = await ethers.provider.getSigner();
+        let cost =ethers.BigNumber.from(0);
+        const tx = {
+            to: escrowAddress,
+            value: cost.add(ethers.utils.parseEther("1")) // Add a small buffer amount
+        };
 
-        console.log("Releasing milestone due to sufficient contributions...");
+        
+        const sentTx = await signer.sendTransaction(tx);
+        await sentTx.wait();
+        console.log('ETH sent to the contract successfully.');
+
+        console.log("Releasing milestone...");
         if (milestoneStatus == "VERIFIED"){
-            const totalContributions = await escrow.calculateTotalContributionsForMilestone(campaignId, milestoneIndex);
-            console.log(`Total contributions for Milestone ${milestoneIndex}: ${ethers.utils.formatEther(totalContributions)} ETH`);
-            if (totalContributions.gte(amount)){
-                console.log(`Releasing Milestone ${milestoneIndex}...`);
-                const releaseTx = await escrow.releaseMilestone(campaignId, milestoneIndex);
-                await releaseTx.wait();
-                console.log(`Milestone ${milestoneIndex} is ${milestoneStatus}.`);
-            } else {
-                console.log(`Milestone ${milestoneIndex} is not ready to be released.`);
-            }
+            console.log(`Releasing Milestone ${currentMilestone}...`);
+            const releaseTx = await escrow.releaseMilestone(campaignId, 1);
+            await releaseTx.wait();
+            console.log(`Milestone ${currentMilestone} is ${milestoneStatus}.`);
         }
-    } 
-    console.log("checking if all released");
-    const txCheck = await escrow.checkAndAdvanceMilestone(campaignId);
-    await txCheck.wait(1);
-    console.log(`Milestone ${milestoneIndex} is released.`);
-
-    // const encodedFunctionCall = governor.interface.encodeFunctionData("releaseMilestone", [campaignId, milestoneIndex]); // campaign id in args
-    // const descriptionHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(proposalDescription));
-
-    // log("Queueing release proposal...");
+        console.log(`Milestone ${currentMilestone} is ${milestoneStatus}.`);
+    }
 
 
    const proposalState = await governor.state(proposalID);

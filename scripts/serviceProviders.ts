@@ -150,7 +150,7 @@ async function main() {
   let cost =ethers.BigNumber.from(0);
   const tx = {
     to: escrowAddress,
-    value: cost.add(ethers.utils.parseEther("1")) // Add a small buffer amount
+    value: cost.add(ethers.utils.parseEther("2")) // Add a small buffer amount
   };
   const sentTx = await signer.sendTransaction(tx);
   await sentTx.wait();
@@ -166,8 +166,24 @@ async function main() {
   try{
     const submit = await escrow.submitServiceCompletion(campaignId, milestoneIndex, serviceProvider[serviceType].ProviderAddress);
     await submit.wait(1);
+
     console.log('Service completion submitted successfully.');
-    await markMilestone(campaignId, milestoneIndex);
+
+    const result = await escrow.getMilestoneDetails(campaignId, milestoneIndex);
+    const milestoneStatus = ["PENDING", "RELEASED", "REFUNDED", "PAID", "VERIFIED"][result[1]];
+    console.log(`Milestone ${milestoneIndex} for campaign ${campaignId} has ${milestoneStatus}.`);
+
+    await markMilestone(campaignId, milestoneIndex, serviceProvider[serviceType].ProviderAddress);
+
+    console.log("Releasing milestone...");
+      if (milestoneStatus == "VERIFIED"){
+          console.log(`Releasing Milestone ${milestoneIndex}...`);
+          const releaseTx = await escrow.releaseMilestone(campaignId, milestoneIndex);
+          await releaseTx.wait();
+          console.log(`Milestone ${milestoneIndex} is ${milestoneStatus}.`);
+      }
+      console.log(`Milestone ${currentMilestone} is ${milestoneStatus}.`);
+
   } catch(e){
     console.error('Failed to submit service completion:', e);
   }
@@ -267,7 +283,7 @@ async function payServiceProvider(campaignId, milestoneIndex, serviceProviderAdd
   }
 }
 
-async function markMilestone(campaignId, milestoneIndex) {
+async function markMilestone(campaignId, milestoneIndex, serviceProviderAddress) {
   try {
     // Read the existing proposals
     const data = await fs.readFile(proposalsPath, 'utf8');
@@ -280,7 +296,7 @@ async function markMilestone(campaignId, milestoneIndex) {
     const campaign = campaigns.find(p => p.campaignId === campaignId);
     if (campaign && campaign.milestones[milestoneIndex]) {
       campaign.milestones[milestoneIndex].completed = true;
-      
+      campaign.milestones[milestoneIndex].serviceProvider = serviceProviderAddress;
       await fs.writeFile(proposalsPath, JSON.stringify(proposals, null, 2), 'utf8');
       console.log(`Milestone ${milestoneIndex} of campaign ${campaignId} marked as completed.`);
     } else {

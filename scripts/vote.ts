@@ -40,7 +40,6 @@ export async function vote(proposalID: string, voteType: number = VOTE_YES) {
 
 const proposals = JSON.parse(fs.readFileSync(PROPOSAL_FILE, "utf8"));
 
-// Assuming the chainId is something like '31337', adjust as necessary for your setup
 const chainId = network.config.chainId!.toString();
 
 if (!proposals[chainId] || !Array.isArray(proposals[chainId].campaigns)) {

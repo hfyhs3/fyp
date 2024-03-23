@@ -48,7 +48,6 @@ export interface EscrowInterface extends utils.Interface {
     "calculateTotalContributionsForMilestone(uint256,uint256)": FunctionFragment;
     "campaignContributions(uint256,address)": FunctionFragment;
     "campaigns(uint256)": FunctionFragment;
-    "checkAndAdvanceMilestone(uint256)": FunctionFragment;
     "confirmBilling(uint256,uint256)": FunctionFragment;
     "contributeToCampaign(uint256,uint256,string,uint256)": FunctionFragment;
     "createCampaign(address,uint256,uint256)": FunctionFragment;
@@ -86,7 +85,6 @@ export interface EscrowInterface extends utils.Interface {
       | "calculateTotalContributionsForMilestone"
       | "campaignContributions"
       | "campaigns"
-      | "checkAndAdvanceMilestone"
       | "confirmBilling"
       | "contributeToCampaign"
       | "createCampaign"
@@ -141,10 +139,6 @@ export interface EscrowInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "campaigns",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "checkAndAdvanceMilestone",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -274,10 +268,6 @@ export interface EscrowInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "campaigns", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "checkAndAdvanceMilestone",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "confirmBilling",
     data: BytesLike
@@ -700,11 +690,6 @@ export interface Escrow extends BaseContract {
       }
     >;
 
-    checkAndAdvanceMilestone(
-      campaignId: BigNumberish,
-      overrides?: Overrides & { from?: string }
-    ): Promise<ContractTransaction>;
-
     confirmBilling(
       campaignId: BigNumberish,
       milestoneIndex: BigNumberish,
@@ -919,11 +904,6 @@ export interface Escrow extends BaseContract {
     }
   >;
 
-  checkAndAdvanceMilestone(
-    campaignId: BigNumberish,
-    overrides?: Overrides & { from?: string }
-  ): Promise<ContractTransaction>;
-
   confirmBilling(
     campaignId: BigNumberish,
     milestoneIndex: BigNumberish,
@@ -1134,11 +1114,6 @@ export interface Escrow extends BaseContract {
         currentIndex: BigNumber;
       }
     >;
-
-    checkAndAdvanceMilestone(
-      campaignId: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     confirmBilling(
       campaignId: BigNumberish,
@@ -1527,11 +1502,6 @@ export interface Escrow extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    checkAndAdvanceMilestone(
-      campaignId: BigNumberish,
-      overrides?: Overrides & { from?: string }
-    ): Promise<BigNumber>;
-
     confirmBilling(
       campaignId: BigNumberish,
       milestoneIndex: BigNumberish,
@@ -1715,11 +1685,6 @@ export interface Escrow extends BaseContract {
     campaigns(
       arg0: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    checkAndAdvanceMilestone(
-      campaignId: BigNumberish,
-      overrides?: Overrides & { from?: string }
     ): Promise<PopulatedTransaction>;
 
     confirmBilling(

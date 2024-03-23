@@ -251,29 +251,39 @@ contract Escrow is Ownable {
         Campaign storage campaign = campaigns[_campaignId];
         require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
         Milestone storage milestone = campaign.milestones[_milestoneIndex];
-        require(milestone.amount > 0, "Milestone has no funds allocated.");
+        // require(milestone.amount > 0, "Milestone has no funds allocated.");
         require(milestone.status == MilestoneStatus.VERIFIED, "Milestone must be verified before release.");
-        // milestone.status = MilestoneStatus.PENDING;
 
-        payable(campaign.beneficiary).transfer(milestone.amount);
+        uint amount = milestone.amount;
+        address payable beneficiary = payable(campaign.beneficiary);
+        console.log(amount);
+        // Ensure the contract has enough balance to cover the transfer
+        require(address(this).balance >= amount, "Insufficient funds in the contract.");
+
+        // Ensure the transfer is successful
+        (bool success, ) = beneficiary.call{value: amount}("");
+        require(success, "Transfer failed.");
 
         milestone.status = MilestoneStatus.RELEASED;
         emit MilestoneUpdated(_campaignId, _milestoneIndex, MilestoneStatus.RELEASED);
-
+       
         bool allMilestonesReleased = true;
         for (uint i = 0; i < campaign.milestones.length; i++) {
-            if (milestone.status != MilestoneStatus.RELEASED) {
+            if (campaign.milestones[i].status != MilestoneStatus.RELEASED) {
                 allMilestonesReleased = false;
                 break;
             }
         }
-
-        
         if (allMilestonesReleased) {
             campaign.status = CampaignStatus.COMPLETED;
             emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
-            emit AllMilestonesReceived(_campaignId);
         }
+
+        
+        // if (allMilestonesReleased) {
+        //     campaign.status = CampaignStatus.COMPLETED;
+        //     emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
+        // }
     }
 
     /**
@@ -313,22 +323,6 @@ contract Escrow is Ownable {
         return campaign.milestones[_milestoneIndex].history;
     }
 
-    function checkAndAdvanceMilestone(uint campaignId) public {
-        Campaign storage campaign = campaigns[campaignId];
-        require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active");
-
-        if (campaign.currentIndex < campaign.milestones.length){
-            campaign.milestones[campaign.currentIndex].status = MilestoneStatus.RELEASED;
-            emit MilestoneReached(campaignId, campaign.currentIndex);
-
-            campaign.currentIndex++; // Move to the next milestone
-
-            if (campaign.currentIndex >= campaign.milestones.length) {
-                campaign.status = CampaignStatus.COMPLETED;
-                emit CampaignCompleted(campaignId);
-            }
-        }
-     }
 
     function refundContributors(uint _campaignId) public  {
         Campaign storage campaign = campaigns[_campaignId];
@@ -371,8 +365,8 @@ contract Escrow is Ownable {
             address contributor = campaignContributors[_campaignId][i];
             totalContributionsForMilestone += campaign.contributions[contributor];
         }
-        console.log("Total contributions for milestone:", totalContributionsForMilestone);
-        console.log("Milestone required amount:", milestone.amount);
+        // console.log("Total contributions for milestone:", totalContributionsForMilestone);
+        // console.log("Milestone required amount:", milestone.amount);
         // require(totalContributionsForMilestone >= campaign.milestones[_milestoneIndex].amount, "Milestone not reached.");
         return totalContributionsForMilestone; 
     }
