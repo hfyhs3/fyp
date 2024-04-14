@@ -48,7 +48,7 @@ async function viewMilestoneDetails(campaignId: number, milestoneIndex: number):
         console.error('Error fetching milestone details:', error);
     }
 }
-
+// find details
 const campaignId = 1;
 const milestoneIndex = 0;
 

@@ -15,7 +15,6 @@ contract Escrow is Ownable {
     receive() external payable {}
 
     Counters.Counter private _itemIdCounter;
-    // enum Available {NO, YES}
     enum CampaignStatus {
         PENDING,
         ACTIVE,
@@ -27,6 +26,7 @@ contract Escrow is Ownable {
         PENDING,
         RELEASED,
         REFUNDED,
+        HALF_COMPLETE,
         PAID,
         VERIFIED
     }
@@ -38,8 +38,6 @@ contract Escrow is Ownable {
     }
 
     struct DonorSpecification{
-        uint milestoneIndex;
-        string milestoneDescription;
         uint256 targetAmount;
     }
 
@@ -93,7 +91,7 @@ contract Escrow is Ownable {
 
     //milestone events
     event MilestoneUpdated(uint indexed campaignId, uint milestoneIndex, MilestoneStatus status);
-    event ContributionReceived(address indexed contributor, uint amount, uint indexed campaignId, uint indexed milestoneIndex, string description, uint targetAmount);
+    event ContributionReceived(address indexed contributor, uint indexed campaignId, uint targetAmount);
     event TransactionHistUpdate(uint indexed campaignId, uint indexed milestoneIndex);
     event MilestoneVerified(uint indexed campaignId, uint milestoneIndex);
     event RefundIssued(uint id, address contributor, uint refundAmt);
@@ -145,7 +143,7 @@ contract Escrow is Ownable {
     function getDetails(uint campaignId) public view returns (int ){
         Campaign storage campaign = campaigns[campaignId];
         for (uint i = 0; i < campaign.milestones.length; i++){
-            if (campaign.milestones[i].status == MilestoneStatus.PENDING){
+            if (campaign.milestones[i].status == MilestoneStatus.PENDING || campaign.milestones[i].status == MilestoneStatus.HALF_COMPLETE){
                 return int(i);
             }
         }
@@ -190,15 +188,16 @@ contract Escrow is Ownable {
         console.log("Total Amount After Setting: ", newCampaign.totalAmount);
         newCampaign.status = CampaignStatus.PENDING;
         newCampaign.currentIndex = 1;
-
         for (uint i = 0; i < _milestoneCount; i++) {
             TransactionHistory memory history = TransactionHistory({
                 workers: 0,
                 materialCost: 0,
                 daysTaken: 0
             });
+            uint milestoneAmt = _totalAmount / _milestoneCount;
+            console.log("Milestone Amount: ", milestoneAmt);
             newCampaign.milestones.push(Milestone({
-                amount: _totalAmount / _milestoneCount,
+                amount: milestoneAmt,
                 status: MilestoneStatus.PENDING,
                 history: TransactionHistory({workers: 0, materialCost: 0, daysTaken: 0}),
                 description: "",
@@ -206,11 +205,9 @@ contract Escrow is Ownable {
                 serviceProvider: address(0), // Assuming an empty address for initialization
                 serviceComplete: false, // Assuming false for initialization
                 billing: Billing({workersCost: 0, materialsCost: 0, totalCost: 0, isSubmitted: false, isConfirmed: false})
-            }));        
-                
+            }));
+            emit CampaignCreated(newCampaignId, _beneficiary, _totalAmount);
         }
-
-        emit CampaignCreated(newCampaignId, _beneficiary, _totalAmount);
     }
 
     function approveCampaign(uint _campaignId) external {
@@ -232,18 +229,21 @@ contract Escrow is Ownable {
         //MANAGE REFUNDS IF ANY MADE IF CAMPAIGN WAS APPROVED THEN REJECTED LATER
     }
 
-    function contributeToCampaign(uint _campaignId, uint _milestoneIndex, string memory _description, uint _amount) public payable {
+    function contributeToCampaign(uint _campaignId, uint _amount) public payable {
         Campaign storage campaign = campaigns[_campaignId];
         require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
         require(msg.value > 0, "Contribution must be greater than zero.");
 
         campaign.contributions[msg.sender] += msg.value;
         donorSpecs[_campaignId].push(DonorSpecification({
-        milestoneIndex: _milestoneIndex,
-        milestoneDescription: _description,
         targetAmount: _amount
         }));
-        emit ContributionReceived(msg.sender, msg.value, _campaignId, _milestoneIndex, _description, _amount);
+        emit ContributionReceived(msg.sender, _campaignId, _amount);
+
+        uint256 contributionPerMilestone = msg.value / campaign.milestones.length;
+        for (uint i = 0; i < campaign.milestones.length; i++) {
+            campaign.milestones[i].amount += contributionPerMilestone;
+        }
     }
 
     // 6. release milestone
@@ -252,19 +252,29 @@ contract Escrow is Ownable {
         require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
         Milestone storage milestone = campaign.milestones[_milestoneIndex];
         // require(milestone.amount > 0, "Milestone has no funds allocated.");
-        require(milestone.status == MilestoneStatus.VERIFIED, "Milestone must be verified before release.");
+        require(milestone.status == MilestoneStatus.HALF_COMPLETE || milestone.status == MilestoneStatus.VERIFIED, "Milestone must be either half complete or verified before release.");
 
-        uint amount = milestone.amount;
+        uint releaseAmount;
+        if (milestone.amount > 2.8 ether) { // 10,000 usd approximately
+            releaseAmount = milestone.amount * 20 / 100; // Calculate 20% of the milestone amount
+            milestone.status = MilestoneStatus.HALF_COMPLETE;
+        } else if (milestone.status == MilestoneStatus.HALF_COMPLETE){
+            releaseAmount = milestone.status == MilestoneStatus.HALF_COMPLETE ? (milestone.amount * 80 / 100) : milestone.amount;
+            milestone.status = MilestoneStatus.RELEASED;        
+        } else  if (milestone.amount <= 2.8 ether){
+            releaseAmount = milestone.amount;
+            milestone.status = MilestoneStatus.RELEASED;
+        }
+
         address payable beneficiary = payable(campaign.beneficiary);
-        console.log(amount);
+        console.log(releaseAmount);
         // Ensure the contract has enough balance to cover the transfer
-        require(address(this).balance >= amount, "Insufficient funds in the contract.");
+        require(address(this).balance >= releaseAmount, "Insufficient funds in the contract.");
 
         // Ensure the transfer is successful
-        (bool success, ) = beneficiary.call{value: amount}("");
+        (bool success, ) = beneficiary.call{value: releaseAmount}("");
         require(success, "Transfer failed.");
 
-        milestone.status = MilestoneStatus.RELEASED;
         emit MilestoneUpdated(_campaignId, _milestoneIndex, MilestoneStatus.RELEASED);
        
         bool allMilestonesReleased = true;
@@ -278,12 +288,6 @@ contract Escrow is Ownable {
             campaign.status = CampaignStatus.COMPLETED;
             emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
         }
-
-        
-        // if (allMilestonesReleased) {
-        //     campaign.status = CampaignStatus.COMPLETED;
-        //     emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
-        // }
     }
 
     /**
@@ -298,23 +302,6 @@ contract Escrow is Ownable {
         milestone.status = MilestoneStatus.VERIFIED;
         emit MilestoneVerified(_campaignId, _milestoneIndex);
     }
-
-    /**
-    A function to verify that a milestone has been completed before funds are released */
-
-    // function verifyMilestone(uint _campaignId, uint _milestoneIndex) public {
-    //     // Only a trusted verifier or the contract owner can verify a milestone
-    //     // require(msg.sender == owner(), "Only the owner can verify milestones");
-
-    //     Campaign storage campaign = campaigns[_campaignId];
-    //     require(_milestoneIndex < campaign.milestones.length, "Invalid milestone index");
-        
-    //     Milestone storage milestone = campaign.milestones[_milestoneIndex];
-    //     require(milestone.status == MilestoneStatus.PENDING, "Milestone must be pending to be verified");
-
-    //     milestone.status = MilestoneStatus.VERIFIED;
-    //     emit MilestoneVerified(_campaignId, _milestoneIndex);
-    // }
 
     function getTransactionHistory(uint _campaignId, uint _milestoneIndex) public view returns (TransactionHistory memory) {
         Campaign storage campaign = campaigns[_campaignId];
@@ -364,10 +351,9 @@ contract Escrow is Ownable {
         for (uint i = 0; i < campaignContributors[_campaignId].length; i++) { 
             address contributor = campaignContributors[_campaignId][i];
             totalContributionsForMilestone += campaign.contributions[contributor];
+            console.log("Total Contributions: ", totalContributionsForMilestone);
         }
-        // console.log("Total contributions for milestone:", totalContributionsForMilestone);
-        // console.log("Milestone required amount:", milestone.amount);
-        // require(totalContributionsForMilestone >= campaign.milestones[_milestoneIndex].amount, "Milestone not reached.");
+
         return totalContributionsForMilestone; 
     }
 
@@ -417,13 +403,18 @@ contract Escrow is Ownable {
         );
     }
 
+// 20% of the amount required will be released from the contributors to the campaign if amount is too high
+//feasibility and limitations and benefits of this entire project
+// identify patterns from web2 to web3 and what are the best practices
+// show the entire process transparency
+
 
     // 1. request service first
     function requestService(uint campaignId, uint milestoneIndex, string memory serviceDescription, address serviceProvider) public {
         // require(campaigns[campaignId].beneficiary == msg.sender, "Only campaign beneficiary can request services");
         require(milestoneIndex < campaigns[campaignId].milestones.length, "Invalid milestone index");
         Milestone storage milestone = campaigns[campaignId].milestones[milestoneIndex];
-        require(milestone.status == MilestoneStatus.PENDING, "Service can only be requested for pending milestones");
+        require(milestone.status == MilestoneStatus.PENDING || milestone.status == MilestoneStatus.HALF_COMPLETE, "Service can only be requested for pending or half complete milestones");
         
         milestone.serviceDescription = serviceDescription;
         milestone.serviceProvider = serviceProvider;
@@ -436,7 +427,7 @@ contract Escrow is Ownable {
         // Ensure milestone is verified and funds are ready to be transferred
         Campaign storage campaign = campaigns[_campaignId];
         Milestone storage milestone = campaigns[_campaignId].milestones[_milestoneIndex];
-        require(milestone.status == MilestoneStatus.PENDING, "Milestone not verified");
+        require(milestone.status == MilestoneStatus.PENDING || milestone.status == MilestoneStatus.HALF_COMPLETE, "Milestone not pending or half complete");
         require (campaign.totalAmount >= milestone.amount, "Insufficient funds in campaign" );
 
         // Transfer funds to service provider
@@ -450,7 +441,6 @@ contract Escrow is Ownable {
     function submitBilling(uint campaignId, uint milestoneIndex, uint workersCost, uint materialsCost) public {
         Milestone storage milestone = campaigns[campaignId].milestones[milestoneIndex];
         uint totalCost = workersCost + materialsCost;
-        // require(totalCost <= milestone.amount, "Total cost exceeds the allocated milestone amount");
 
         milestone.billing = Billing({
             workersCost: workersCost,

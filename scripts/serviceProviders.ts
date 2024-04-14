@@ -14,7 +14,7 @@ const rl = readline.createInterface({
 });
 
 const proposalsPath = path.join(__dirname, "..", PROPOSAL_FILE);
-
+const donationsFilePath = path.join(__dirname, 'users.json');
 
 function question(query: string): Promise<string> {
     return new Promise((resolve) => rl.question(query, resolve));
@@ -40,7 +40,7 @@ interface Material {
 
 
 const serviceProvider = {
-  "Food": {
+  "food": {
     "ProviderAddress": ethers.Wallet.createRandom().address,
     "Workers": 10,
     "CostPerWorker": ethers.utils.parseEther("0.5"),
@@ -62,7 +62,7 @@ const serviceProvider = {
       }
     ]
   },
-  "Education": {
+  "education": {
     "ProviderAddress": ethers.Wallet.createRandom().address,
     "Workers": 5,
     "CostPerWorker": ethers.utils.parseEther("1"),
@@ -81,7 +81,7 @@ const serviceProvider = {
       }
     ]
   },
-  "Health": {
+  "health": {
     "ProviderAddress": ethers.Wallet.createRandom().address,
     "Workers": 15,
     "CostPerWorker": ethers.utils.parseEther("1.5"),
@@ -101,7 +101,6 @@ const serviceProvider = {
     ]
   }
 };
-//print out this info for the campaign to see
 async function requestServices( campaignId, milestoneIndex, milestoneDescription, serviceType) {
     const { get } = deployments;
 
@@ -129,9 +128,36 @@ async function main() {
   const campaignId = await question('Enter campaign ID: ');
   const currentMilestone = await escrow.getDetails(campaignId);
   console.log('Current Milestone:', currentMilestone);
+  const campaignStatus = await escrow.getCampaignStatus(campaignId);
+  const CamstatusString = ["PENDING", "ACTIVE", "COMPLETED", "REJECTED"][campaignStatus];
+  console.log(`Campaign Status: ${CamstatusString}`);
 
   const milestoneIndex = await question('Enter milestone index: ');
-  const milestoneDescription = await question('Enter milestone description: ');
+  const milestoneDescription = await printdetails(campaignId, milestoneIndex);
+
+  console.log("Checking milestone amount...");
+
+  const details = await escrow.getMilestoneDetails(campaignId, milestoneIndex);
+  const status = ["PENDING", "RELEASED", "REFUNDED", "HALF_COMPLETE", "PAID", "VERIFIED"][details[1]];
+  console.log(`Milestone ${milestoneIndex} for campaign ${campaignId} is ${status}.`);
+  if (details[0] > ethers.utils.parseEther("2.8")) {
+    if (status != "HALF_COMPLETE"){
+      const newStatus = 3;
+      const setTx = await escrow.setMilestoneStatus(campaignId, milestoneIndex, newStatus);
+      await setTx.wait();
+      console.log(`The milestone amount is: ${details[0]} ETH, therefore 20% of the milestone will be released.`);
+      console.log(`Please complete 80% of the milestone at your convenience`);
+      console.log("Releasing 20%");
+      const release = await escrow.releaseMilestone(campaignId, milestoneIndex);
+      await release.wait();
+      console.log(`20% of the milestone released successfully.`);
+      const result = await escrow.getMilestoneDetails(campaignId, milestoneIndex);
+      const Status = ["PENDING", "RELEASED", "REFUNDED", "HALF_COMPLETE", "PAID", "VERIFIED"][result[1]];
+      console.log(`Milestone ${milestoneIndex} for campaign ${campaignId} is ${Status}.`);
+      process.exit(0);
+    }
+  }
+
   const serviceType = await question('Enter the service type (Food, Education, Health): ');
   const requiredWorkers = parseInt((await question('Enter the number of required workers: ')) as string, 10);
   const materialsCount = parseInt((await question('How many different types of materials are required? ')) as string, 10);
@@ -150,29 +176,30 @@ async function main() {
   let cost =ethers.BigNumber.from(0);
   const tx = {
     to: escrowAddress,
-    value: cost.add(ethers.utils.parseEther("2")) // Add a small buffer amount
+    value: cost.add(ethers.utils.parseEther("2")) 
   };
   const sentTx = await signer.sendTransaction(tx);
   await sentTx.wait();
   console.log('ETH sent to the contract successfully.');
-
+  const result = await escrow.getMilestoneDetails(campaignId, milestoneIndex);
+    const milestoneStatus = ["PENDING", "RELEASED", "HALF_COMPLETE", "PAID", "VERIFIED"][result[1]];
+    console.log(`Milestone ${milestoneIndex} for campaign ${campaignId} has ${milestoneStatus}.`);
   console.log('Calculating cost...');
-  await calculateCost(campaignId, milestoneIndex, serviceProvider, { serviceType, requiredWorkers, requiredMaterials });
+  await calculateCost(campaignId, milestoneIndex, serviceProvider, result[0], result[1], { serviceType, requiredWorkers, requiredMaterials });
   console.log('confirming bill...');
   await confirmBill(campaignId, milestoneIndex);
   console.log('Paying service provider...');
   await payServiceProvider(campaignId, milestoneIndex, serviceProvider[serviceType].ProviderAddress);
   console.log('Final steps...');
+
   try{
     const submit = await escrow.submitServiceCompletion(campaignId, milestoneIndex, serviceProvider[serviceType].ProviderAddress);
     await submit.wait(1);
 
     console.log('Service completion submitted successfully.');
-
-    const result = await escrow.getMilestoneDetails(campaignId, milestoneIndex);
-    const milestoneStatus = ["PENDING", "RELEASED", "REFUNDED", "PAID", "VERIFIED"][result[1]];
     console.log(`Milestone ${milestoneIndex} for campaign ${campaignId} has ${milestoneStatus}.`);
 
+    console.log(`Campaign Status: ${CamstatusString}`);
     await markMilestone(campaignId, milestoneIndex, serviceProvider[serviceType].ProviderAddress);
 
     console.log("Releasing milestone...");
@@ -181,16 +208,15 @@ async function main() {
           const releaseTx = await escrow.releaseMilestone(campaignId, milestoneIndex);
           await releaseTx.wait();
           console.log(`Milestone ${milestoneIndex} is ${milestoneStatus}.`);
+          console.log(`Campaign Status: ${CamstatusString}`);
       }
-      console.log(`Milestone ${currentMilestone} is ${milestoneStatus}.`);
-
   } catch(e){
     console.error('Failed to submit service completion:', e);
   }
   rl.close();
 }
 
-async function calculateCost(campaignId, milestoneIndex, serviceProvider, serviceRequest) {
+async function calculateCost(campaignId, milestoneIndex, serviceProvider, amount, status, serviceRequest) {
   const { get } = deployments;
 
   const escrowDeploy = await get("Escrow");
@@ -233,7 +259,11 @@ async function calculateCost(campaignId, milestoneIndex, serviceProvider, servic
         const requiredCostEther = ethers.utils.formatEther(requiredCost);
 
         console.log(`Required cost in ether: ${requiredCostEther}`);
-        const availableQuantity = parseFloat(materialInfo.Quantity.split("kg")[0] || materialInfo.Quantity.split("liters")[0]);
+
+        let availableQuantity = materialInfo.Quantity;
+        if (serviceRequest.serviceType === "food") {
+          availableQuantity = parseFloat(materialInfo.Quantity.split("kg")[0] || materialInfo.Quantity.split("liters")[0]);
+        }
 
         if (availableQuantity < materialRequest.quantity) {
           console.log(`Insufficient quantity for ${materialRequest.name}. Required: ${materialRequest.quantity}, Available: ${availableQuantity}`);
@@ -242,14 +272,19 @@ async function calculateCost(campaignId, milestoneIndex, serviceProvider, servic
           totalCost = totalCost.add(requiredCost);
         }
     }
-
-  console.log(`Total Cost for ${serviceRequest.serviceType}: ${ethers.utils.formatEther(totalCost)} ETH`);
-  console.log('Submitting bill for campaign ${campaignId}, milestone ${milestoneIndex}...');
-  const billing = await escrow.submitBilling(campaignId, milestoneIndex, workerCost, requiredCost);
-  await billing.wait();
-  console.log('Billing submitted successfully.');
-
-}
+  if (amount > ethers.utils.parseEther("2.8")) {
+      console.log("verification successful.")
+      console.log(`Total Cost for ${serviceRequest.serviceType}: ${ethers.utils.formatEther(totalCost)} ETH`);
+      console.log(`Status is: ${status}`);
+      console.log('Submitting bill for campaign ${campaignId}, milestone ${milestoneIndex}...');
+      const billing = await escrow.submitBilling(campaignId, milestoneIndex, workerCost, requiredCost);
+      await billing.wait();
+      console.log('Billing submitted successfully.');
+    } else {
+      console.log('verification failed. services do not match milestone description. Please restart.');
+      main();
+    }
+  }
 
 async function confirmBill(campaignId, milestoneIndex) {
   const { get } = deployments;
@@ -264,7 +299,6 @@ async function confirmBill(campaignId, milestoneIndex) {
   console.log('Billing confirmed successfully.');
 }
 
-// no eth is being passed. no information is being passed about the money how can the function continue then??
 
 async function payServiceProvider(campaignId, milestoneIndex, serviceProviderAddress) {
   const { get } = deployments;
@@ -307,12 +341,23 @@ async function markMilestone(campaignId, milestoneIndex, serviceProviderAddress)
   }
 }
 
+async function printdetails(campaignId, milestoneIndex) {
+  const data = await fs.readFile(proposalsPath, 'utf8');
+  const proposals = JSON.parse(data);
 
+  const chainId = "31337";
+  const campaigns = proposals[chainId].campaigns;
+  let campaign = campaigns.find(p => p.campaignId === campaignId);
+  return campaign.milestones[milestoneIndex].description;
+}
 
 main().catch(error => {
   console.error(error);
   process.exit(1);
 });
+
+
+
 
 
 

@@ -1,17 +1,18 @@
 {
   "users": [
     {
-      "id": "1",
-      "password": "123"
-    },
-    {
+      "id": "2",
+      "password": "hoorsiraj",
       "donations": [
         {
-          "ethAmount": 2,
+          "ethAmount": {
+            "type": "BigNumber",
+            "hex": "0x7ce66c50e2840000"
+          },
           "distribution": [
-            "50% Food",
-            "50% Health"
-          ]
+            "100% education"
+          ],
+          "campaignId": "1"
         }
       ]
     }

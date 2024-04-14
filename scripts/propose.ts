@@ -67,12 +67,13 @@ export async function  makeProposal ()
 
     const totalAmountInput = await question("Enter the total amount for the campaign (in ETH): ");
     const totalAmount = ethers.utils.parseEther(totalAmountInput); 
-    const milestoneCount = 3; // recheck
+    console.log("Total Amount: " + totalAmount.toString());
+    console.log("Milestone amt: " + totalAmount.div(3).toString());
+    const milestoneCount = 3;
     const campaignDescription = await question("Enter the campaign description: ");
 
     rl.close();
     const beneficiaryAddress =  deployer.address;
-    const serviceProivder = deployer.address;
     const completed: boolean = false;
     const campaignDetails = {
         beneficiaryAddress,
@@ -81,8 +82,7 @@ export async function  makeProposal ()
         milestones: Array(milestoneCount).fill(null).map((_, index) => ({
             index: index + 1,
             description: `Milestone ${index + 1} Description`, // Placeholder description
-            completed,
-            serviceProivder,
+            completed
         })),
     };
 

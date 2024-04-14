@@ -49,7 +49,7 @@ export interface EscrowInterface extends utils.Interface {
     "campaignContributions(uint256,address)": FunctionFragment;
     "campaigns(uint256)": FunctionFragment;
     "confirmBilling(uint256,uint256)": FunctionFragment;
-    "contributeToCampaign(uint256,uint256,string,uint256)": FunctionFragment;
+    "contributeToCampaign(uint256,uint256)": FunctionFragment;
     "createCampaign(address,uint256,uint256)": FunctionFragment;
     "daoAddress()": FunctionFragment;
     "donorSpecs(uint256,uint256)": FunctionFragment;
@@ -147,7 +147,7 @@ export interface EscrowInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "contributeToCampaign",
-    values: [BigNumberish, BigNumberish, string, BigNumberish]
+    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "createCampaign",
@@ -373,7 +373,7 @@ export interface EscrowInterface extends utils.Interface {
     "CampaignCompleted(uint256)": EventFragment;
     "CampaignCreated(uint256,address,uint256)": EventFragment;
     "CampaignStatusChanged(uint256,uint8)": EventFragment;
-    "ContributionReceived(address,uint256,uint256,uint256,string,uint256)": EventFragment;
+    "ContributionReceived(address,uint256,uint256)": EventFragment;
     "MilestoneDescriptionUpdated(uint256,uint256,string)": EventFragment;
     "MilestoneReached(uint256,uint256)": EventFragment;
     "MilestoneUpdated(uint256,uint256,uint8)": EventFragment;
@@ -482,14 +482,11 @@ export type CampaignStatusChangedEventFilter =
 
 export interface ContributionReceivedEventObject {
   contributor: string;
-  amount: BigNumber;
   campaignId: BigNumber;
-  milestoneIndex: BigNumber;
-  description: string;
   targetAmount: BigNumber;
 }
 export type ContributionReceivedEvent = TypedEvent<
-  [string, BigNumber, BigNumber, BigNumber, string, BigNumber],
+  [string, BigNumber, BigNumber],
   ContributionReceivedEventObject
 >;
 
@@ -698,8 +695,6 @@ export interface Escrow extends BaseContract {
 
     contributeToCampaign(
       _campaignId: BigNumberish,
-      _milestoneIndex: BigNumberish,
-      _description: string,
       _amount: BigNumberish,
       overrides?: PayableOverrides & { from?: string }
     ): Promise<ContractTransaction>;
@@ -717,13 +712,7 @@ export interface Escrow extends BaseContract {
       arg0: BigNumberish,
       arg1: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, string, BigNumber] & {
-        milestoneIndex: BigNumber;
-        milestoneDescription: string;
-        targetAmount: BigNumber;
-      }
-    >;
+    ): Promise<[BigNumber] & { targetAmount: BigNumber }>;
 
     escAccount(overrides?: CallOverrides): Promise<[string]>;
 
@@ -912,8 +901,6 @@ export interface Escrow extends BaseContract {
 
   contributeToCampaign(
     _campaignId: BigNumberish,
-    _milestoneIndex: BigNumberish,
-    _description: string,
     _amount: BigNumberish,
     overrides?: PayableOverrides & { from?: string }
   ): Promise<ContractTransaction>;
@@ -931,13 +918,7 @@ export interface Escrow extends BaseContract {
     arg0: BigNumberish,
     arg1: BigNumberish,
     overrides?: CallOverrides
-  ): Promise<
-    [BigNumber, string, BigNumber] & {
-      milestoneIndex: BigNumber;
-      milestoneDescription: string;
-      targetAmount: BigNumber;
-    }
-  >;
+  ): Promise<BigNumber>;
 
   escAccount(overrides?: CallOverrides): Promise<string>;
 
@@ -1123,8 +1104,6 @@ export interface Escrow extends BaseContract {
 
     contributeToCampaign(
       _campaignId: BigNumberish,
-      _milestoneIndex: BigNumberish,
-      _description: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
@@ -1142,13 +1121,7 @@ export interface Escrow extends BaseContract {
       arg0: BigNumberish,
       arg1: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, string, BigNumber] & {
-        milestoneIndex: BigNumber;
-        milestoneDescription: string;
-        targetAmount: BigNumber;
-      }
-    >;
+    ): Promise<BigNumber>;
 
     escAccount(overrides?: CallOverrides): Promise<string>;
 
@@ -1344,20 +1317,14 @@ export interface Escrow extends BaseContract {
       status?: null
     ): CampaignStatusChangedEventFilter;
 
-    "ContributionReceived(address,uint256,uint256,uint256,string,uint256)"(
+    "ContributionReceived(address,uint256,uint256)"(
       contributor?: string | null,
-      amount?: null,
       campaignId?: BigNumberish | null,
-      milestoneIndex?: BigNumberish | null,
-      description?: null,
       targetAmount?: null
     ): ContributionReceivedEventFilter;
     ContributionReceived(
       contributor?: string | null,
-      amount?: null,
       campaignId?: BigNumberish | null,
-      milestoneIndex?: BigNumberish | null,
-      description?: null,
       targetAmount?: null
     ): ContributionReceivedEventFilter;
 
@@ -1510,8 +1477,6 @@ export interface Escrow extends BaseContract {
 
     contributeToCampaign(
       _campaignId: BigNumberish,
-      _milestoneIndex: BigNumberish,
-      _description: string,
       _amount: BigNumberish,
       overrides?: PayableOverrides & { from?: string }
     ): Promise<BigNumber>;
@@ -1695,8 +1660,6 @@ export interface Escrow extends BaseContract {
 
     contributeToCampaign(
       _campaignId: BigNumberish,
-      _milestoneIndex: BigNumberish,
-      _description: string,
       _amount: BigNumberish,
       overrides?: PayableOverrides & { from?: string }
     ): Promise<PopulatedTransaction>;

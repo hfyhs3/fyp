@@ -3,51 +3,19 @@
     "campaigns": [
       {
         "campaignId": "1",
-        "proposalId": "80120451634363553065150918949629798461499884192508004993949343226863616102666",
+        "proposalId": "101592866501591781111889978142147542297853220191864563560589851960243438598018",
         "beneficiaryAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
         "totalAmount": {
           "type": "BigNumber",
-          "hex": "0x29a2241af62c0000"
+          "hex": "0x7ce66c50e2840000"
         },
-        "description": "Food",
+        "description": "education",
         "milestones": [
           {
             "index": 1,
             "description": "Milestone 1 Description",
             "completed": true,
-            "serviceProivder": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-            "serviceProvider": "0xEb62d1AcD9EA2c6a5425b42e3469b1E56ec29E7B"
-          },
-          {
-            "index": 2,
-            "description": "Milestone 2 Description",
-            "completed": true,
-            "serviceProivder": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-            "serviceProvider": "0x25cdBE440130FADbb3C6516Ef50b73720612A817"
-          },
-          {
-            "index": 3,
-            "description": "Milestone 3 Description",
-            "completed": true,
-            "serviceProivder": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-            "serviceProvider": "0x1628dC404a3d42055Cc64e5b988315E5Aad06320"
-          }
-        ]
-      },
-      {
-        "campaignId": "2",
-        "proposalId": "10588702299845216503060077871571820863521542972957868958727511648658394715716",
-        "beneficiaryAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-        "totalAmount": {
-          "type": "BigNumber",
-          "hex": "0x29a2241af62c0000"
-        },
-        "description": "Food",
-        "milestones": [
-          {
-            "index": 1,
-            "description": "Milestone 1 Description",
-            "completed": true
+            "serviceProvider": "0xb74805F60E5474A4C67f10e5c99FD47E54097A6a"
           },
           {
             "index": 2,
