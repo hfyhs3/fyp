@@ -2,19 +2,7 @@
   "users": [
     {
       "id": "2",
-      "password": "hoorsiraj",
-      "donations": [
-        {
-          "ethAmount": {
-            "type": "BigNumber",
-            "hex": "0x7ce66c50e2840000"
-          },
-          "distribution": [
-            "100% education"
-          ],
-          "campaignId": "1"
-        }
-      ]
+      "password": "hoorsiraj"
     }
   ]
 }

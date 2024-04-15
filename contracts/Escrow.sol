@@ -41,6 +41,12 @@ contract Escrow is Ownable {
         uint256 targetAmount;
     }
 
+    struct MilestoneFunding {
+        uint totalContributed;
+        bool isFullyFunded;
+    }
+
+
     struct Milestone{
         uint amount;
         MilestoneStatus status;
@@ -61,6 +67,8 @@ contract Escrow is Ownable {
         CampaignStatus status;
         Milestone[] milestones;
         uint currentIndex;
+
+        uint totalContributions;
         mapping(address => uint) contributions;
     }
 
@@ -235,6 +243,8 @@ contract Escrow is Ownable {
         require(msg.value > 0, "Contribution must be greater than zero.");
 
         campaign.contributions[msg.sender] += msg.value;
+        campaign.totalContributions += msg.value;
+
         donorSpecs[_campaignId].push(DonorSpecification({
         targetAmount: _amount
         }));
@@ -342,21 +352,21 @@ contract Escrow is Ownable {
     }
 
     // Utility function to get contributors list for a campaign
-    function calculateTotalContributionsForMilestone(uint _campaignId, uint _milestoneIndex) public view returns (uint256) { 
-        Campaign storage campaign = campaigns[_campaignId]; 
-        Milestone storage milestone = campaign.milestones[_milestoneIndex];
+    function TotalContributions(uint _campaignId) public
+        view
+        returns (MilestoneFunding[] memory contributions)
+    {
+        Campaign storage campaign = campaigns[_campaignId];
+        contributions = new MilestoneFunding[](campaign.milestones.length);
 
-        uint256 totalContributionsForMilestone = 0; 
-
-        for (uint i = 0; i < campaignContributors[_campaignId].length; i++) { 
-            address contributor = campaignContributors[_campaignId][i];
-            totalContributionsForMilestone += campaign.contributions[contributor];
-            console.log("Total Contributions: ", totalContributionsForMilestone);
+        for (uint i = 0; i < campaign.milestones.length; i++) {
+            uint milestoneContribution = campaign.milestones[i].amount;
+            bool isFullyFunded = milestoneContribution >= campaign.milestones[i].amount;
+            contributions[i] = MilestoneFunding(milestoneContribution, isFullyFunded);
         }
 
-        return totalContributionsForMilestone; 
+        return contributions;
     }
-
     /**
     Allow donor to view details of campaign they have contributed to */
     function viewCampaignDetails(uint _campaignId) public view returns (

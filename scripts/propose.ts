@@ -67,8 +67,8 @@ export async function  makeProposal ()
 
     const totalAmountInput = await question("Enter the total amount for the campaign (in ETH): ");
     const totalAmount = ethers.utils.parseEther(totalAmountInput); 
-    console.log("Total Amount: " + totalAmount.toString());
-    console.log("Milestone amt: " + totalAmount.div(3).toString());
+    console.log("Total Amount: " + ethers.utils.formatEther(totalAmount) + " ETH");
+    console.log("Milestone amt: " + ethers.utils.formatEther(totalAmount.div(3)) + " ETH");
     const milestoneCount = 3;
     const campaignDescription = await question("Enter the campaign description: ");
 

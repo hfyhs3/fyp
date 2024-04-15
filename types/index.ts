@@ -86,3 +86,5 @@ export type { TimeLock } from "./contracts/Governance_standard/TimeLock";
 export { TimeLock__factory } from "./factories/contracts/Governance_standard/TimeLock__factory";
 export type { GovernanceToken } from "./contracts/GovernanceToken";
 export { GovernanceToken__factory } from "./factories/contracts/GovernanceToken__factory";
+export type { MockERC5805Token } from "./contracts/MockERC5805Token";
+export { MockERC5805Token__factory } from "./factories/contracts/MockERC5805Token__factory";

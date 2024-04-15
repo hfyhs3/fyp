@@ -172,6 +172,10 @@ declare module "hardhat/types/runtime" {
       name: "GovernanceToken",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.GovernanceToken__factory>;
+    getContractFactory(
+      name: "MockERC5805Token",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MockERC5805Token__factory>;
 
     getContractAt(
       name: "AccessControl",
@@ -373,6 +377,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.GovernanceToken>;
+    getContractAt(
+      name: "MockERC5805Token",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MockERC5805Token>;
 
     // default types
     getContractFactory(

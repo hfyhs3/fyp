@@ -3,19 +3,45 @@
     "campaigns": [
       {
         "campaignId": "1",
-        "proposalId": "101592866501591781111889978142147542297853220191864563560589851960243438598018",
+        "proposalId": "99212707478419115848416917062426071083009618919371169072736369956679612397028",
         "beneficiaryAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
         "totalAmount": {
           "type": "BigNumber",
-          "hex": "0x7ce66c50e2840000"
+          "hex": "0x29a2241af62c0000"
+        },
+        "description": "Education",
+        "milestones": [
+          {
+            "index": 1,
+            "description": "Milestone 1 Description",
+            "completed": false
+          },
+          {
+            "index": 2,
+            "description": "Milestone 2 Description",
+            "completed": false
+          },
+          {
+            "index": 3,
+            "description": "Milestone 3 Description",
+            "completed": false
+          }
+        ]
+      },
+      {
+        "campaignId": "2",
+        "proposalId": "7696825980190437321296477729308649706333396860831734267209816189139411431814",
+        "beneficiaryAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "totalAmount": {
+          "type": "BigNumber",
+          "hex": "0x29a2241af62c0000"
         },
         "description": "education",
         "milestones": [
           {
             "index": 1,
             "description": "Milestone 1 Description",
-            "completed": true,
-            "serviceProvider": "0xb74805F60E5474A4C67f10e5c99FD47E54097A6a"
+            "completed": false
           },
           {
             "index": 2,

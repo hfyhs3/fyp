@@ -1867,8 +1867,8 @@
       ]
     },
     "C:\\Users\\hoors\\dao-fyp\\contracts\\Governance_standard\\GovernorContract.sol": {
-      "lastModificationDate": 1709581513078,
-      "contentHash": "478caf522e59050b4e484b34bb5742f4",
+      "lastModificationDate": 1713098729139,
+      "contentHash": "8cd77929369320aa1d763f7ac8cf3a1a",
       "sourceName": "contracts/Governance_standard/GovernorContract.sol",
       "solcConfig": {
         "version": "0.8.19",
@@ -2224,8 +2224,8 @@
       ]
     },
     "C:\\Users\\hoors\\dao-fyp\\contracts\\Escrow.sol": {
-      "lastModificationDate": 1712682586035,
-      "contentHash": "6432ac5044e6c82fe0bf190dc90a791e",
+      "lastModificationDate": 1713193826589,
+      "contentHash": "9e93d8b89119c570c97695a066767dce",
       "sourceName": "contracts/Escrow.sol",
       "solcConfig": {
         "version": "0.8.19",
@@ -2311,6 +2311,51 @@
       ],
       "artifacts": [
         "console"
+      ]
+    },
+    "C:\\Users\\hoors\\dao-fyp\\contracts\\MockERC5805Token.sol": {
+      "lastModificationDate": 1713092237368,
+      "contentHash": "0de08aacce7d8950865fd611f278f944",
+      "sourceName": "contracts/MockERC5805Token.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 100
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "devdoc",
+                "userdoc",
+                "storageLayout",
+                "evm.gasEstimates"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "metadata": {
+            "useLiteralContent": true
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "MockERC5805Token"
       ]
     }
   }

@@ -65,6 +65,7 @@ export interface GovernorContractInterface extends utils.Interface {
     "quorumDenominator()": FunctionFragment;
     "quorumNumerator(uint256)": FunctionFragment;
     "quorumNumerator()": FunctionFragment;
+    "rejectCampaign(uint256)": FunctionFragment;
     "relay(address,uint256,bytes)": FunctionFragment;
     "releaseMilestone(uint256,uint256)": FunctionFragment;
     "setProposalThreshold(uint256)": FunctionFragment;
@@ -119,6 +120,7 @@ export interface GovernorContractInterface extends utils.Interface {
       | "quorumDenominator"
       | "quorumNumerator(uint256)"
       | "quorumNumerator()"
+      | "rejectCampaign"
       | "relay"
       | "releaseMilestone"
       | "setProposalThreshold"
@@ -279,6 +281,10 @@ export interface GovernorContractInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "rejectCampaign",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "relay",
     values: [string, BigNumberish, BytesLike]
   ): string;
@@ -429,6 +435,10 @@ export interface GovernorContractInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "quorumNumerator()",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "rejectCampaign",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "relay", data: BytesLike): Result;
@@ -900,6 +910,11 @@ export interface GovernorContract extends BaseContract {
 
     "quorumNumerator()"(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    rejectCampaign(
+      campaignId: BigNumberish,
+      overrides?: Overrides & { from?: string }
+    ): Promise<ContractTransaction>;
+
     relay(
       target: string,
       value: BigNumberish,
@@ -1173,6 +1188,11 @@ export interface GovernorContract extends BaseContract {
 
   "quorumNumerator()"(overrides?: CallOverrides): Promise<BigNumber>;
 
+  rejectCampaign(
+    campaignId: BigNumberish,
+    overrides?: Overrides & { from?: string }
+  ): Promise<ContractTransaction>;
+
   relay(
     target: string,
     value: BigNumberish,
@@ -1442,6 +1462,11 @@ export interface GovernorContract extends BaseContract {
     ): Promise<BigNumber>;
 
     "quorumNumerator()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    rejectCampaign(
+      campaignId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     relay(
       target: string,
@@ -1813,6 +1838,11 @@ export interface GovernorContract extends BaseContract {
 
     "quorumNumerator()"(overrides?: CallOverrides): Promise<BigNumber>;
 
+    rejectCampaign(
+      campaignId: BigNumberish,
+      overrides?: Overrides & { from?: string }
+    ): Promise<BigNumber>;
+
     relay(
       target: string,
       value: BigNumberish,
@@ -2071,6 +2101,11 @@ export interface GovernorContract extends BaseContract {
 
     "quorumNumerator()"(
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    rejectCampaign(
+      campaignId: BigNumberish,
+      overrides?: Overrides & { from?: string }
     ): Promise<PopulatedTransaction>;
 
     relay(

@@ -24,18 +24,22 @@ export async function vote(proposalID: string, voteType: number = VOTE_YES) {
     const voteTX = await governor.castVoteWithReason(
         proposalID, 
         voteType,
-        "Cause yeah");
+        "Yes");
     
     await voteTX.wait(1);
 
     let proposalState = await governor.state(proposalID);
-    console.log("proposal state before is: ", proposalState);
+    if  (proposalState != 1){
+        throw new Error(`Proposal is not in active state. Current State: ${proposalState}`);
+    }else{
+        console.log("proposal state before is: ", proposalState.toString());
 
-    if (developmentChains.includes(network.name)){
-        await moveBlocks(VOTING_PERIOD + 1);
+        if (developmentChains.includes(network.name)){
+            await moveBlocks(VOTING_PERIOD + 1);
+        }
+        proposalState = await governor.state(proposalID);
+        console.log("proposal state after is: ", proposalState.toString());
     }
-    proposalState = await governor.state(proposalID);
-    console.log("proposal state after is: ", proposalState);
 }
 
 const proposals = JSON.parse(fs.readFileSync(PROPOSAL_FILE, "utf8"));
@@ -47,10 +51,8 @@ if (!proposals[chainId] || !Array.isArray(proposals[chainId].campaigns)) {
     process.exit(0);
 }
 
-// Now you can safely use map since you checked it's an array
 const networkProposals = proposals[chainId].campaigns.map(campaign => campaign.proposalId);
 
-// Make sure we have at least one proposal ID
 if (networkProposals.length === 0) {
     console.log(`No proposal IDs found for chain ID ${chainId}`);
     process.exit(0);

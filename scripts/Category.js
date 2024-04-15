@@ -5,6 +5,7 @@ const fs = require('fs');
 const donationsFilePath = path.join(__dirname, 'users.json');
 const sessionFilePath = path.join(__dirname, 'session.json');
 const { PROPOSAL_FILE } = require("../hardhat-helper-config");
+const { ethers } = require('hardhat');
 const proposalsPath = path.join(__dirname, "..", PROPOSAL_FILE);
 
 const rl = readline.createInterface({
@@ -95,23 +96,20 @@ const storeDonationData = ({ethAmount, distribution, campaignId}) => {
   }
 };
 
-  const contribute = async (campaignId) => {
-    const { get } = deployments;
-    console.log('Contribute to campaign:', campaignId);
-    const escrowDeploy = await get("Escrow");
-    const escrowAddress = escrowDeploy.address;
-    const escrow = await ethers.getContractAt("Escrow", escrowAddress);
+const askDonationAmount = (choices) => {
+  rl.question('Enter the amount of ETH you want to donate: ', (amount) => {
+    const ethAmount = ethers.utils.parseEther(amount);
+    if (ethAmount.isZero() || ethAmount.isNegative()) {
+      console.log('Please enter a valid amount.');
+      askDonationAmount(choices);
+    } else {
+      console.log(`You've chosen to donate ${ethAmount} ETH.`);
+      collect(choices, ethAmount);
+    }
+  });
+};
 
-    rl.question('Enter the amount of ETH you want to donate: ', async (amount) => {
-      const ethAmount = ethers.utils.parseEther(amount.toString());
-      if (ethAmount.lte(0)) {
-        console.log('Please enter a valid amount.');
-        rl.close();
-        return;
-      } else {
-        console.log(`You've chosen to donate ${ethAmount} ETH.`);
-      }
-
+const collect = async (validCampaigns, ethAmount) => {
     rl.question('Enter how you want to divide your donation among the selected campaigns (e.g., 50% education, 30% health, 20% food): ', async (distribution) => {
       const distributionArr = distribution.split(',').map(item => item.trim());
       const totalPercentage = distributionArr.reduce((total, current) => {
@@ -122,42 +120,56 @@ const storeDonationData = ({ethAmount, distribution, campaignId}) => {
       if (totalPercentage !== 100) {
         console.log('Total distribution must equal 100%. Please try again.');
         rl.close();
-        return;
-      }
-        console.log(`Your donation will be divided as follows: ${distribution}`);
-        storeDonationData({ ethAmount, distribution: distributionArr, campaignId });
-        distributionArr.forEach(async dist => {
-          const [percentageStr, campaignType] = dist.split('% ');
-          const proportion = ethers.BigNumber.from(percentageStr);
-          // Calculate the amount of ETH for this campaign. Assume ethAmount is already a BigNumber
-          const contributionAmount = ethAmount.mul(proportion).div(100);
-          console.log(`Contributing ${ethers.utils.formatEther(contributionAmount)} ETH to campaign ${campaignId} (${campaignType})`);
-          try {
-            const formattedCampaignId = ethers.BigNumber.from(campaignId).toNumber();
-            const options = { value: contributionAmount };
-            await escrow.contributeToCampaign(formattedCampaignId, contributionAmount, options );
-            console.log(`Contributed ${ethers.utils.formatEther(contributionAmount)} ETH to campaign ${campaignId} (${campaignType})`);
-          } catch (error) {
-            console.error('Failed to contribute to campaign:', error);
-          }
-        });
+      } else {
+        for (const campaign of validCampaigns) {
+          await contribute(campaign.campaignId, ethAmount, distributionArr);
+        }
         rl.close();
-      });
-  });
+      }
+    });
+};
+
+  const contribute = async (campaignId, ethAmount, distributionArr) => {
+    const { get } = deployments;
+    console.log('Contribute to campaign:', campaignId);
+    const escrowDeploy = await get("Escrow");
+    const escrowAddress = escrowDeploy.address;
+    const escrow = await ethers.getContractAt("Escrow", escrowAddress);
+
+    distributionArr.forEach(async dist => {
+      const [percentageStr, campaignType] = dist.split('% ');
+      const proportion = ethers.BigNumber.from(percentageStr);
+      // Calculate the amount of ETH for this campaign. Assume ethAmount is already a BigNumber
+      const contributionAmount = ethAmount.mul(proportion).div(100);
+      console.log(`Contributing ${ethers.utils.formatEther(contributionAmount)} ETH to campaign ${campaignId} (${campaignType})`);
+      try {
+        const formattedCampaignId = ethers.BigNumber.from(campaignId).toNumber();
+        const options = { value: contributionAmount };
+        await escrow.contributeToCampaign(formattedCampaignId, contributionAmount, options );
+        console.log(`Contributed.`);
+      } catch (error) {
+        console.error('Failed to contribute to campaign:', error);
+      }
+    });
+    rl.close();
 };
 
 // Function to handle the campaign selection and call the donation distribution function
 const handleCampaignSelection = () => {
   const campaigns = loadCampaigns();
   printCampaignDetails(campaigns);
-  rl.question('Select campaigns you want to donate to: ', (campaignId) => {
-    const selectedCampaign = campaigns.find(campaign => campaign.campaignId === campaignId);
+  rl.question('Select campaigns you want to donate to: ', (input) => {
+    const campaignIds = input.split(',').map(id => id.trim());
+    const selectedCampaign = campaigns.filter(campaign => campaignIds.includes(campaign.campaignId));
     if (!selectedCampaign) {
       console.log('No valid campaign selected. Please try again.');
       handleCampaignSelection();
     } else {
-      console.log(`You've selected to donate to campaign ID: ${selectedCampaign.campaignId}, Description: ${selectedCampaign.description}`);
-      contribute(campaignId);
+      selectedCampaign.forEach(async (campaign) => {
+        console.log(`You've selected to donate to campaign ID: ${campaign.campaignId}, Description: ${campaign.description}`);
+        askDonationAmount(selectedCampaign);
+
+      });
     }
   });
 };

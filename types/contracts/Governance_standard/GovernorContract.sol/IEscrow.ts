@@ -26,6 +26,7 @@ export interface IEscrowInterface extends utils.Interface {
   functions: {
     "approveCampaign(uint256)": FunctionFragment;
     "createCampaign(address,uint256,uint256)": FunctionFragment;
+    "rejectCampaign(uint256)": FunctionFragment;
     "releaseMilestone(uint256,uint256)": FunctionFragment;
   };
 
@@ -33,6 +34,7 @@ export interface IEscrowInterface extends utils.Interface {
     nameOrSignatureOrTopic:
       | "approveCampaign"
       | "createCampaign"
+      | "rejectCampaign"
       | "releaseMilestone"
   ): FunctionFragment;
 
@@ -45,6 +47,10 @@ export interface IEscrowInterface extends utils.Interface {
     values: [string, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "rejectCampaign",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "releaseMilestone",
     values: [BigNumberish, BigNumberish]
   ): string;
@@ -55,6 +61,10 @@ export interface IEscrowInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "createCampaign",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "rejectCampaign",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -104,6 +114,11 @@ export interface IEscrow extends BaseContract {
       overrides?: Overrides & { from?: string }
     ): Promise<ContractTransaction>;
 
+    rejectCampaign(
+      campaignId: BigNumberish,
+      overrides?: Overrides & { from?: string }
+    ): Promise<ContractTransaction>;
+
     releaseMilestone(
       campaignId: BigNumberish,
       milestoneIndex: BigNumberish,
@@ -123,6 +138,11 @@ export interface IEscrow extends BaseContract {
     overrides?: Overrides & { from?: string }
   ): Promise<ContractTransaction>;
 
+  rejectCampaign(
+    campaignId: BigNumberish,
+    overrides?: Overrides & { from?: string }
+  ): Promise<ContractTransaction>;
+
   releaseMilestone(
     campaignId: BigNumberish,
     milestoneIndex: BigNumberish,
@@ -139,6 +159,11 @@ export interface IEscrow extends BaseContract {
       beneficiary: string,
       totalAmount: BigNumberish,
       milestoneCount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    rejectCampaign(
+      campaignId: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -164,6 +189,11 @@ export interface IEscrow extends BaseContract {
       overrides?: Overrides & { from?: string }
     ): Promise<BigNumber>;
 
+    rejectCampaign(
+      campaignId: BigNumberish,
+      overrides?: Overrides & { from?: string }
+    ): Promise<BigNumber>;
+
     releaseMilestone(
       campaignId: BigNumberish,
       milestoneIndex: BigNumberish,
@@ -181,6 +211,11 @@ export interface IEscrow extends BaseContract {
       beneficiary: string,
       totalAmount: BigNumberish,
       milestoneCount: BigNumberish,
+      overrides?: Overrides & { from?: string }
+    ): Promise<PopulatedTransaction>;
+
+    rejectCampaign(
+      campaignId: BigNumberish,
       overrides?: Overrides & { from?: string }
     ): Promise<PopulatedTransaction>;
 

@@ -28,6 +28,16 @@ import type {
 } from "../common";
 
 export declare namespace Escrow {
+  export type MilestoneFundingStruct = {
+    totalContributed: BigNumberish;
+    isFullyFunded: boolean;
+  };
+
+  export type MilestoneFundingStructOutput = [BigNumber, boolean] & {
+    totalContributed: BigNumber;
+    isFullyFunded: boolean;
+  };
+
   export type TransactionHistoryStruct = {
     workers: BigNumberish;
     materialCost: BigNumberish;
@@ -43,9 +53,9 @@ export declare namespace Escrow {
 
 export interface EscrowInterface extends utils.Interface {
   functions: {
+    "TotalContributions(uint256)": FunctionFragment;
     "VerifyTransaction(uint256,uint256,uint256,uint256,uint256)": FunctionFragment;
     "approveCampaign(uint256)": FunctionFragment;
-    "calculateTotalContributionsForMilestone(uint256,uint256)": FunctionFragment;
     "campaignContributions(uint256,address)": FunctionFragment;
     "campaigns(uint256)": FunctionFragment;
     "confirmBilling(uint256,uint256)": FunctionFragment;
@@ -80,9 +90,9 @@ export interface EscrowInterface extends utils.Interface {
 
   getFunction(
     nameOrSignatureOrTopic:
+      | "TotalContributions"
       | "VerifyTransaction"
       | "approveCampaign"
-      | "calculateTotalContributionsForMilestone"
       | "campaignContributions"
       | "campaigns"
       | "confirmBilling"
@@ -116,6 +126,10 @@ export interface EscrowInterface extends utils.Interface {
   ): FunctionFragment;
 
   encodeFunctionData(
+    functionFragment: "TotalContributions",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "VerifyTransaction",
     values: [
       BigNumberish,
@@ -128,10 +142,6 @@ export interface EscrowInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "approveCampaign",
     values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "calculateTotalContributionsForMilestone",
-    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "campaignContributions",
@@ -252,15 +262,15 @@ export interface EscrowInterface extends utils.Interface {
   ): string;
 
   decodeFunctionResult(
+    functionFragment: "TotalContributions",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "VerifyTransaction",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "approveCampaign",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "calculateTotalContributionsForMilestone",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -648,6 +658,15 @@ export interface Escrow extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
+    TotalContributions(
+      _campaignId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [Escrow.MilestoneFundingStructOutput[]] & {
+        contributions: Escrow.MilestoneFundingStructOutput[];
+      }
+    >;
+
     VerifyTransaction(
       _campaignId: BigNumberish,
       _milestoneIndex: BigNumberish,
@@ -662,12 +681,6 @@ export interface Escrow extends BaseContract {
       overrides?: Overrides & { from?: string }
     ): Promise<ContractTransaction>;
 
-    calculateTotalContributionsForMilestone(
-      _campaignId: BigNumberish,
-      _milestoneIndex: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
     campaignContributions(
       arg0: BigNumberish,
       arg1: string,
@@ -678,12 +691,13 @@ export interface Escrow extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, string, BigNumber, number, BigNumber] & {
+      [BigNumber, string, BigNumber, number, BigNumber, BigNumber] & {
         id: BigNumber;
         beneficiary: string;
         totalAmount: BigNumber;
         status: number;
         currentIndex: BigNumber;
+        totalContributions: BigNumber;
       }
     >;
 
@@ -854,6 +868,11 @@ export interface Escrow extends BaseContract {
     >;
   };
 
+  TotalContributions(
+    _campaignId: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<Escrow.MilestoneFundingStructOutput[]>;
+
   VerifyTransaction(
     _campaignId: BigNumberish,
     _milestoneIndex: BigNumberish,
@@ -868,12 +887,6 @@ export interface Escrow extends BaseContract {
     overrides?: Overrides & { from?: string }
   ): Promise<ContractTransaction>;
 
-  calculateTotalContributionsForMilestone(
-    _campaignId: BigNumberish,
-    _milestoneIndex: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
   campaignContributions(
     arg0: BigNumberish,
     arg1: string,
@@ -884,12 +897,13 @@ export interface Escrow extends BaseContract {
     arg0: BigNumberish,
     overrides?: CallOverrides
   ): Promise<
-    [BigNumber, string, BigNumber, number, BigNumber] & {
+    [BigNumber, string, BigNumber, number, BigNumber, BigNumber] & {
       id: BigNumber;
       beneficiary: string;
       totalAmount: BigNumber;
       status: number;
       currentIndex: BigNumber;
+      totalContributions: BigNumber;
     }
   >;
 
@@ -1057,6 +1071,11 @@ export interface Escrow extends BaseContract {
   >;
 
   callStatic: {
+    TotalContributions(
+      _campaignId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<Escrow.MilestoneFundingStructOutput[]>;
+
     VerifyTransaction(
       _campaignId: BigNumberish,
       _milestoneIndex: BigNumberish,
@@ -1071,12 +1090,6 @@ export interface Escrow extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    calculateTotalContributionsForMilestone(
-      _campaignId: BigNumberish,
-      _milestoneIndex: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     campaignContributions(
       arg0: BigNumberish,
       arg1: string,
@@ -1087,12 +1100,13 @@ export interface Escrow extends BaseContract {
       arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, string, BigNumber, number, BigNumber] & {
+      [BigNumber, string, BigNumber, number, BigNumber, BigNumber] & {
         id: BigNumber;
         beneficiary: string;
         totalAmount: BigNumber;
         status: number;
         currentIndex: BigNumber;
+        totalContributions: BigNumber;
       }
     >;
 
@@ -1438,6 +1452,11 @@ export interface Escrow extends BaseContract {
   };
 
   estimateGas: {
+    TotalContributions(
+      _campaignId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     VerifyTransaction(
       _campaignId: BigNumberish,
       _milestoneIndex: BigNumberish,
@@ -1450,12 +1469,6 @@ export interface Escrow extends BaseContract {
     approveCampaign(
       _campaignId: BigNumberish,
       overrides?: Overrides & { from?: string }
-    ): Promise<BigNumber>;
-
-    calculateTotalContributionsForMilestone(
-      _campaignId: BigNumberish,
-      _milestoneIndex: BigNumberish,
-      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     campaignContributions(
@@ -1621,6 +1634,11 @@ export interface Escrow extends BaseContract {
   };
 
   populateTransaction: {
+    TotalContributions(
+      _campaignId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     VerifyTransaction(
       _campaignId: BigNumberish,
       _milestoneIndex: BigNumberish,
@@ -1633,12 +1651,6 @@ export interface Escrow extends BaseContract {
     approveCampaign(
       _campaignId: BigNumberish,
       overrides?: Overrides & { from?: string }
-    ): Promise<PopulatedTransaction>;
-
-    calculateTotalContributionsForMilestone(
-      _campaignId: BigNumberish,
-      _milestoneIndex: BigNumberish,
-      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     campaignContributions(
