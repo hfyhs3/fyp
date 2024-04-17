@@ -14,7 +14,8 @@
           {
             "index": 1,
             "description": "Milestone 1 Description",
-            "completed": false
+            "completed": true,
+            "serviceProvider": "0x615dd69FE8863AecfC3f4aEd828cdD158CD9F92e"
           },
           {
             "index": 2,

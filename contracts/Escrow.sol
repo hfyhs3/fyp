@@ -438,7 +438,7 @@ contract Escrow is Ownable {
         Campaign storage campaign = campaigns[_campaignId];
         Milestone storage milestone = campaigns[_campaignId].milestones[_milestoneIndex];
         require(milestone.status == MilestoneStatus.PENDING || milestone.status == MilestoneStatus.HALF_COMPLETE, "Milestone not pending or half complete");
-        require (campaign.totalAmount >= milestone.amount, "Insufficient funds in campaign" );
+        // require (campaign.totalAmount >= milestone.amount, "Insufficient funds in campaign" );
 
         // Transfer funds to service provider
         campaign.totalAmount -= milestone.amount;

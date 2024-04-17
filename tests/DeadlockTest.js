@@ -34,7 +34,7 @@ describe("Governor and Escrow Integration Test", function () {
         const timelock = await TimelockController.deploy(MIN_DELAY, proposers, executors, admin);
         await timelock.deployed();
         
-        const escAccount = deployer.address; // You might want to use a different address in a real scenario
+        const escAccount = deployer.address; 
         const daoAddress = deployer.address;
     
         // Deploy the Escrow contract

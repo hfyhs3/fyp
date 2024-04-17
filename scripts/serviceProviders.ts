@@ -13,6 +13,11 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
+function formatEther(value, decimals = 2) {
+  const etherString = ethers.utils.formatEther(value);
+  return parseFloat(etherString).toFixed(decimals);
+}
+
 const proposalsPath = path.join(__dirname, "..", PROPOSAL_FILE);
 const donationsFilePath = path.join(__dirname, 'users.json');
 
@@ -101,6 +106,9 @@ const serviceProvider = {
     ]
   }
 };
+
+let totalgas = ethers.BigNumber.from(0);
+
 async function requestServices( campaignId, milestoneIndex, milestoneDescription, serviceType) {
     const { get } = deployments;
 
@@ -115,7 +123,7 @@ async function requestServices( campaignId, milestoneIndex, milestoneDescription
 
     const reqServ = await escrow.requestService(campaignId, milestoneIndex, milestoneDescription, serviceProvider[serviceType]["ProviderAddress"] );
     await reqServ.wait(1); 
-    
+    totalgas = totalgas.add(reqServ.gasUsed);    
     console.log(`Requesting ${serviceType} service for campaign ${campaignId}, milestone ${milestoneIndex}...`);
 
     console.log('Service requested successfully.');
@@ -126,6 +134,8 @@ async function main() {
   const escrowDeploy = await get("Escrow");
   const escrowAddress = escrowDeploy.address;
   const signer = await ethers.provider.getSigner();
+
+  const start = Date.now();
 
   const escrow = await ethers.getContractAt("Escrow", escrowAddress);
 
@@ -259,6 +269,8 @@ async function main() {
           console.log(`Milestone ${milestoneIndex} is ${milestoneStatus}.`);
           console.log(`Campaign Status: ${CamstatusString}`);
       }
+      const end = Date.now();
+      console.log(`Time taken: ${end - start}ms`);
   } catch(e){
     console.error('Failed to submit service completion:', e);
   }
@@ -288,7 +300,7 @@ async function calculateCost(campaignId, milestoneIndex, serviceProvider, amount
       const CostPerWorker = ethers.utils.parseUnits(serviceInfo.CostPerWorker.toString(), 'ether');
       workerCost = CostPerWorker.mul(serviceRequest.requiredWorkers);
 
-      console.log(`Worker cost in ether: ${ethers.utils.formatEther(workerCost)}`);
+      console.log(`Worker cost in ether: ${formatEther(workerCost)}`);
 
       totalCost = totalCost.add(workerCost);
   }
@@ -304,7 +316,7 @@ async function calculateCost(campaignId, milestoneIndex, serviceProvider, amount
       }
 
         const materialCostPerUnit = ethers.utils.parseUnits(materialInfo.Cost.toString(), 'ether');
-        console.log(`Cost per unit for ${materialRequest.name} in ether: ${ethers.utils.formatEther(materialCostPerUnit)}`);
+        console.log(`Cost per unit for ${materialRequest.name} in ether: ${formatEther(materialCostPerUnit)}`);
 
         const quantityBn = BigNumber.from(materialRequest.quantity.toString());
         console.log(`Quantity for ${materialRequest.name}: ${quantityBn}`);
@@ -327,19 +339,19 @@ async function calculateCost(campaignId, milestoneIndex, serviceProvider, amount
           totalCost = totalCost.add(requiredCost);
         }
     }
-  if (amount > ethers.utils.parseEther("2.8")) {
-      console.log("verification successful.")
-      console.log(`Total Cost for ${serviceRequest.serviceType}: ${ethers.utils.formatEther(totalCost)} ETH`);
-      console.log(`Status is: ${status}`);
-      console.log('Submitting bill for campaign ${campaignId}, milestone ${milestoneIndex}...');
+    if (amount == totalCost || totalCost > amount || amount > ethers.utils.parseEther("2.8")) {
+        console.log("verification successful.")
+        console.log(`Total Cost for ${serviceRequest.serviceType}: ${formatEther(totalCost)} ETH`);
+        console.log(`Status is: ${status}`);
+        console.log('Submitting bill for campaign ${campaignId}, milestone ${milestoneIndex}...');
 
-      const billing = await escrow.submitBilling(campaignId, milestoneIndex, workerCost, requiredCost);
-      await billing.wait();
+        const billing = await escrow.submitBilling(campaignId, milestoneIndex, workerCost, requiredCost);
+        await billing.wait();
 
-      console.log('Billing submitted successfully.');
+        console.log('Billing submitted successfully.');
     } else {
-      console.log('verification failed. services do not match milestone description. Please restart.');
-      main();
+        console.log('verification failed. services do not match milestone description. Please restart.');
+        process.exit(0);
     }
   }
 

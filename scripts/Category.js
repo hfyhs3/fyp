@@ -100,7 +100,7 @@ const askDonationAmount = (choices) => {
   rl.question('Enter the amount of ETH you want to donate: ', (amount) => {
     const ethAmount = ethers.utils.parseEther(amount);
     if (ethAmount.isZero() || ethAmount.isNegative()) {
-      console.log('Please enter a valid amount.');
+      console.log('Invalid donation amount. Please try again.');
       askDonationAmount(choices);
     } else {
       console.log(`You've chosen to donate ${ethAmount} ETH.`);
@@ -116,6 +116,8 @@ const collect = async (validCampaigns, ethAmount) => {
         const [percentage] = current.split('%');
         return total + parseInt(percentage, 10);
       }, 0);
+      console.log('Distribution:', distributionArr);
+      console.log('Total distribution:', totalPercentage, '%' );
   
       if (totalPercentage !== 100) {
         console.log('Total distribution must equal 100%. Please try again.');
@@ -142,6 +144,7 @@ const collect = async (validCampaigns, ethAmount) => {
       // Calculate the amount of ETH for this campaign. Assume ethAmount is already a BigNumber
       const contributionAmount = ethAmount.mul(proportion).div(100);
       console.log(`Contributing ${ethers.utils.formatEther(contributionAmount)} ETH to campaign ${campaignId} (${campaignType})`);
+      const startTime = Date.now();
       try {
         const formattedCampaignId = ethers.BigNumber.from(campaignId).toNumber();
         const options = { value: contributionAmount };
@@ -150,7 +153,10 @@ const collect = async (validCampaigns, ethAmount) => {
       } catch (error) {
         console.error('Failed to contribute to campaign:', error);
       }
+      const endTime = Date.now();
+      console.log(`Time taken to contribute to campaign: ${endTime - startTime}ms`);
     });
+
     rl.close();
 };
 
