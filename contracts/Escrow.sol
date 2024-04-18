@@ -241,7 +241,8 @@ contract Escrow is Ownable {
         Campaign storage campaign = campaigns[_campaignId];
         require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
         require(msg.value > 0, "Contribution must be greater than zero.");
-
+        require(campaign.totalContributions + msg.value = campaign.totalAmount, "Campaign fully funded. No further contributions allowed.");
+        
         campaign.contributions[msg.sender] += msg.value;
         campaign.totalContributions += msg.value;
 
