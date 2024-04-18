@@ -241,8 +241,8 @@ contract Escrow is Ownable {
         Campaign storage campaign = campaigns[_campaignId];
         require(campaign.status == CampaignStatus.ACTIVE, "Campaign must be active.");
         require(msg.value > 0, "Contribution must be greater than zero.");
-        require(campaign.totalContributions + msg.value = campaign.totalAmount, "Campaign fully funded. No further contributions allowed.");
-        
+        require(campaign.totalContributions + msg.value <= campaign.totalAmount, "Campaign fully funded. No further contributions allowed.");
+
         campaign.contributions[msg.sender] += msg.value;
         campaign.totalContributions += msg.value;
 
@@ -319,37 +319,6 @@ contract Escrow is Ownable {
         require(_milestoneIndex < campaign.milestones.length, "Invalid milestone index");
         
         return campaign.milestones[_milestoneIndex].history;
-    }
-
-
-    function refundContributors(uint _campaignId) public  {
-        Campaign storage campaign = campaigns[_campaignId];
-        require(campaign.status == CampaignStatus.REJECTED || (campaign.status == CampaignStatus.COMPLETED && campaign.totalAmount > address(this).balance), "Invalid campaign status for refund.");        
-
-        address[] storage contributors = campaignContributors[_campaignId];
-
-        for (uint256 i = 0; i < contributors.length; i++) {
-            address contributor = contributors[i];
-            uint contribution = campaignContributions[_campaignId][contributor];
-            if (contribution > 0){
-                uint refundAmount = (contribution * 98) / 100; //2% flat rate deduction from the refund amount
-
-                campaignContributions[_campaignId][contributor] = 0; //resetting value to prevent re-entrancy attacks
-
-                (bool sent, ) = contributor.call{value:refundAmount}("");
-                require(sent, "failed to send refund");
-
-                emit RefundIssued(_campaignId, contributor, refundAmount);
-
-
-            }
-        }
-        
-        if (campaign.status != CampaignStatus.COMPLETED){
-            campaign.status = CampaignStatus.COMPLETED;
-            emit CampaignStatusChanged(_campaignId, CampaignStatus.COMPLETED);
-
-        }
     }
 
     // Utility function to get contributors list for a campaign

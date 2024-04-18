@@ -107,8 +107,6 @@ const serviceProvider = {
   }
 };
 
-let totalgas = ethers.BigNumber.from(0);
-
 async function requestServices( campaignId, milestoneIndex, milestoneDescription, serviceType) {
     const { get } = deployments;
 
@@ -123,7 +121,6 @@ async function requestServices( campaignId, milestoneIndex, milestoneDescription
 
     const reqServ = await escrow.requestService(campaignId, milestoneIndex, milestoneDescription, serviceProvider[serviceType]["ProviderAddress"] );
     await reqServ.wait(1); 
-    totalgas = totalgas.add(reqServ.gasUsed);    
     console.log(`Requesting ${serviceType} service for campaign ${campaignId}, milestone ${milestoneIndex}...`);
 
     console.log('Service requested successfully.');
