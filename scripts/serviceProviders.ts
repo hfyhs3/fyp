@@ -185,7 +185,9 @@ async function main() {
       const setTx = await escrow.setMilestoneStatus(campaignId, milestoneIndex, newStatus);
       await setTx.wait();
 
-      console.log(`The milestone amount is: ${ethers.utils.formatEther(details[0])} ETH, therefore 20% of the milestone will be released.`);
+      console.log(`The milestone amount is: ${ethers.utils.formatEther(details[0])} 
+                  ETH, therefore 20% of the milestone will be released.`);
+
       console.log(`Please complete 80% of the milestone at your convenience`);
       console.log("Releasing 20%");
 
@@ -195,7 +197,7 @@ async function main() {
 
       const result = await escrow.getMilestoneDetails(campaignId, milestoneIndex);
       const Status = ["PENDING", "RELEASED", "REFUNDED", "HALF_COMPLETE", "PAID", "VERIFIED"][result[1]];
-      console.log(`Milestone ${milestoneIndex} for campaign ${campaignId} is ${Status}.`);
+      console.log(`Milestone ${milestoneIndex} for campaign ${campaignId} is ${Status} and the amount remaining is ${result[0]}.`);
 
       process.exit(0);
     }
@@ -330,7 +332,8 @@ async function calculateCost(campaignId, milestoneIndex, serviceProvider, amount
         }
 
         if (availableQuantity < materialRequest.quantity) {
-          console.log(`Insufficient quantity for ${materialRequest.name}. Required: ${materialRequest.quantity}, Available: ${availableQuantity}`);
+          console.log(`Insufficient quantity for ${materialRequest.name}. Required: ${materialRequest.quantity}, 
+                      Available: ${availableQuantity}`);
           return;
         } else {
           totalCost = totalCost.add(requiredCost);

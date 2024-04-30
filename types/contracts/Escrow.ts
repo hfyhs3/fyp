@@ -72,7 +72,6 @@ export interface EscrowInterface extends utils.Interface {
     "getTransactionHistory(uint256,uint256)": FunctionFragment;
     "owner()": FunctionFragment;
     "payServiceProvider(uint256,uint256,address)": FunctionFragment;
-    "refundContributors(uint256)": FunctionFragment;
     "rejectCampaign(uint256)": FunctionFragment;
     "releaseMilestone(uint256,uint256)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
@@ -109,7 +108,6 @@ export interface EscrowInterface extends utils.Interface {
       | "getTransactionHistory"
       | "owner"
       | "payServiceProvider"
-      | "refundContributors"
       | "rejectCampaign"
       | "releaseMilestone"
       | "renounceOwnership"
@@ -203,10 +201,6 @@ export interface EscrowInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "payServiceProvider",
     values: [BigNumberish, BigNumberish, string]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "refundContributors",
-    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "rejectCampaign",
@@ -317,10 +311,6 @@ export interface EscrowInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "payServiceProvider",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "refundContributors",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -768,11 +758,6 @@ export interface Escrow extends BaseContract {
       overrides?: Overrides & { from?: string }
     ): Promise<ContractTransaction>;
 
-    refundContributors(
-      _campaignId: BigNumberish,
-      overrides?: Overrides & { from?: string }
-    ): Promise<ContractTransaction>;
-
     rejectCampaign(
       _campaignId: BigNumberish,
       overrides?: Overrides & { from?: string }
@@ -974,11 +959,6 @@ export interface Escrow extends BaseContract {
     overrides?: Overrides & { from?: string }
   ): Promise<ContractTransaction>;
 
-  refundContributors(
-    _campaignId: BigNumberish,
-    overrides?: Overrides & { from?: string }
-  ): Promise<ContractTransaction>;
-
   rejectCampaign(
     _campaignId: BigNumberish,
     overrides?: Overrides & { from?: string }
@@ -1174,11 +1154,6 @@ export interface Escrow extends BaseContract {
       _campaignId: BigNumberish,
       _milestoneIndex: BigNumberish,
       _serviceProvider: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    refundContributors(
-      _campaignId: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1549,11 +1524,6 @@ export interface Escrow extends BaseContract {
       overrides?: Overrides & { from?: string }
     ): Promise<BigNumber>;
 
-    refundContributors(
-      _campaignId: BigNumberish,
-      overrides?: Overrides & { from?: string }
-    ): Promise<BigNumber>;
-
     rejectCampaign(
       _campaignId: BigNumberish,
       overrides?: Overrides & { from?: string }
@@ -1728,11 +1698,6 @@ export interface Escrow extends BaseContract {
       _campaignId: BigNumberish,
       _milestoneIndex: BigNumberish,
       _serviceProvider: string,
-      overrides?: Overrides & { from?: string }
-    ): Promise<PopulatedTransaction>;
-
-    refundContributors(
-      _campaignId: BigNumberish,
       overrides?: Overrides & { from?: string }
     ): Promise<PopulatedTransaction>;
 

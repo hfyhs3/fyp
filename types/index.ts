@@ -74,8 +74,6 @@ export type { ShortStrings } from "./@openzeppelin/contracts/utils/ShortStrings"
 export { ShortStrings__factory } from "./factories/@openzeppelin/contracts/utils/ShortStrings__factory";
 export type { DoubleEndedQueue } from "./@openzeppelin/contracts/utils/structs/DoubleEndedQueue";
 export { DoubleEndedQueue__factory } from "./factories/@openzeppelin/contracts/utils/structs/DoubleEndedQueue__factory";
-export type { Box } from "./contracts/Box";
-export { Box__factory } from "./factories/contracts/Box__factory";
 export type { Escrow } from "./contracts/Escrow";
 export { Escrow__factory } from "./factories/contracts/Escrow__factory";
 export type { GovernorContract } from "./contracts/Governance_standard/GovernorContract.sol/GovernorContract";
@@ -86,5 +84,3 @@ export type { TimeLock } from "./contracts/Governance_standard/TimeLock";
 export { TimeLock__factory } from "./factories/contracts/Governance_standard/TimeLock__factory";
 export type { GovernanceToken } from "./contracts/GovernanceToken";
 export { GovernanceToken__factory } from "./factories/contracts/GovernanceToken__factory";
-export type { MockERC5805Token } from "./contracts/MockERC5805Token";
-export { MockERC5805Token__factory } from "./factories/contracts/MockERC5805Token__factory";

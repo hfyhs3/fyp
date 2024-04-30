@@ -3,19 +3,19 @@
     "campaigns": [
       {
         "campaignId": "1",
-        "proposalId": "101592866501591781111889978142147542297853220191864563560589851960243438598018",
+        "proposalId": "99212707478419115848416917062426071083009618919371169072736369956679612397028",
         "beneficiaryAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
         "totalAmount": {
           "type": "BigNumber",
           "hex": "0x29a2241af62c0000"
         },
-        "description": "education",
+        "description": "Education",
         "milestones": [
           {
             "index": 1,
             "description": "Milestone 1 Description",
             "completed": true,
-            "serviceProvider": "0x7881F15794b6Bba8C7952Ff2C1EC36d8AF6F804B"
+            "serviceProvider": "0xA6f22b8f15eCE54236b28E11a360004F6F96c946"
           },
           {
             "index": 2,

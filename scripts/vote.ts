@@ -9,8 +9,6 @@ const VOTE_ABSTAIN = 2;
 
 export async function vote(proposalID: string, voteType: number = VOTE_YES) {
 
-    let totalGas = ethers.BigNumber.from(0);
-    let blocks = ethers.BigNumber.from(0);
     console.log("voting...");
 
     const { get } = deployments;
@@ -30,7 +28,6 @@ export async function vote(proposalID: string, voteType: number = VOTE_YES) {
         "Yes");
     
     const receipt = await voteTX.wait(1);
-    totalGas = totalGas.add(receipt.gasUsed);
 
     let proposalState = await governor.state(proposalID);
     if  (proposalState != 1){

@@ -94,12 +94,6 @@ export async function  makeProposal ()
 
     const escrow = await ethers.getContractAt("Escrow", escrowAddress);
 
-    // const daoAddress = await escrow.daoAddress();
-    // console.log("daoAddress: " + daoAddress);
-
-    // const daoSigner = await ethers.getSigner(daoAddress);
-    // const escrowSigner = await escrow.connect(daoSigner);
-
     const governor = await ethers.getContractAt("GovernorContract", governorAddress );
 
     const createCampaignTx = await escrow.createCampaign(beneficiaryAddress, totalAmount, milestoneCount);

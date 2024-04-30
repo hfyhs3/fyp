@@ -149,10 +149,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.DoubleEndedQueue__factory>;
     getContractFactory(
-      name: "Box",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Box__factory>;
-    getContractFactory(
       name: "Escrow",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Escrow__factory>;
@@ -172,10 +168,6 @@ declare module "hardhat/types/runtime" {
       name: "GovernanceToken",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.GovernanceToken__factory>;
-    getContractFactory(
-      name: "MockERC5805Token",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.MockERC5805Token__factory>;
 
     getContractAt(
       name: "AccessControl",
@@ -348,11 +340,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.DoubleEndedQueue>;
     getContractAt(
-      name: "Box",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Box>;
-    getContractAt(
       name: "Escrow",
       address: string,
       signer?: ethers.Signer
@@ -377,11 +364,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.GovernanceToken>;
-    getContractAt(
-      name: "MockERC5805Token",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.MockERC5805Token>;
 
     // default types
     getContractFactory(
