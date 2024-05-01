@@ -246,17 +246,25 @@ contract Escrow is Ownable {
             "Campaign fully funded. No further contributions allowed."
         );
 
-        campaign.contributions[msg.sender] += msg.value;
         campaign.totalContributions += msg.value;
 
         donorSpecs[_campaignId].push(DonorSpecification({
-        targetAmount: _amount
+            targetAmount: _amount
         }));
         emit ContributionReceived(msg.sender, _campaignId, _amount);
 
-        uint256 contributionPerMilestone = msg.value / campaign.milestones.length;
-        for (uint i = 0; i < campaign.milestones.length; i++) {
-            campaign.milestones[i].amount += contributionPerMilestone;
+        uint256 totalMilestones = campaign.milestones.length;
+        uint256 contributionPerMilestone = msg.value / totalMilestones;
+        uint256 remainder = msg.value % totalMilestones;
+
+        for (uint i = 0; i < totalMilestones; i++) {
+            uint256 contributionAmount = contributionPerMilestone;
+            if (remainder > 0) {
+                contributionAmount++;
+                remainder--;
+            }
+            campaign.milestones[i].amount += contributionAmount;
+            console.log("Milestone Amount: ", campaign.milestones[i].amount);
         }
     }
 
@@ -411,15 +419,13 @@ contract Escrow is Ownable {
         Campaign storage campaign = campaigns[_campaignId];
         Milestone storage milestone = campaigns[_campaignId].milestones[_milestoneIndex];
         require(milestone.status == MilestoneStatus.PENDING || milestone.status == MilestoneStatus.HALF_COMPLETE, "Milestone not pending or half complete");
+        // require (campaign.totalAmount >= milestone.amount, "Insufficient funds in campaign" );
 
-        // Transfer funds to service provider
-        campaign.totalAmount -= milestone.amount;
         _serviceProvider.transfer(milestone.amount);
-
         milestone.status = MilestoneStatus.PAID; // Update status to indicate payment
         emit ServiceProviderPaid(_campaignId, _milestoneIndex, _serviceProvider, milestone.amount, campaign.totalAmount);
     }
-
+    
     // 2. submit billing
     function submitBilling(uint campaignId, uint milestoneIndex, uint workersCost, uint materialsCost) public {
         Milestone storage milestone = campaigns[campaignId].milestones[milestoneIndex];

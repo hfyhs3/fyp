@@ -226,7 +226,7 @@ async function main() {
   let cost =ethers.BigNumber.from(0);
   const tx = {
     to: escrowAddress,
-    value: cost.add(ethers.utils.parseEther("2")) 
+    value: cost.add(ethers.utils.parseEther("3")) 
   };
 
   const sentTx = await signer.sendTransaction(tx);
@@ -234,11 +234,12 @@ async function main() {
 
   console.log('ETH sent to the contract successfully.');
   const result = await escrow.getMilestoneDetails(campaignId, milestoneIndex);
+  const milestoneAmt = result[0];
   const milestoneStatus = ["PENDING", "RELEASED", "HALF_COMPLETE", "PAID", "VERIFIED"][result[1]];
   console.log(`Milestone ${milestoneIndex} for campaign ${campaignId} has ${milestoneStatus}.`);
 
   console.log('Calculating cost...');
-  await calculateCost(campaignId, milestoneIndex, serviceProvider, result[0], result[1], { serviceType, requiredWorkers, requiredMaterials });
+  await calculateCost(campaignId, milestoneIndex, serviceProvider, milestoneAmt, milestoneStatus, { serviceType, requiredWorkers, requiredMaterials });
   
   console.log('confirming bill...');
   await confirmBill(campaignId, milestoneIndex);
@@ -265,7 +266,6 @@ async function main() {
           const releaseTx = await escrow.releaseMilestone(campaignId, milestoneIndex);
           await releaseTx.wait();
 
-          console.log(`Milestone ${milestoneIndex} is ${milestoneStatus}.`);
           console.log(`Campaign Status: ${CamstatusString}`);
       }
       const end = Date.now();
@@ -339,19 +339,22 @@ async function calculateCost(campaignId, milestoneIndex, serviceProvider, amount
           totalCost = totalCost.add(requiredCost);
         }
     }
-    if (amount == totalCost || totalCost > amount || amount > ethers.utils.parseEther("2.8")) {
-        console.log("verification successful.")
-        console.log(`Total Cost for ${serviceRequest.serviceType}: ${formatEther(totalCost)} ETH`);
-        console.log(`Status is: ${status}`);
-        console.log('Submitting bill for campaign ${campaignId}, milestone ${milestoneIndex}...');
+    console.log(`amount for milestone is: ${formatEther(amount)}`);
+    const NewAmount = ethers.utils.parseEther(amount.toString()).div(2);
+    console.log(`New Amount for milestone is: ${formatEther(NewAmount)}`);
+    if (NewAmount.eq(totalCost) || totalCost.gt(amount) || amount.gt(ethers.utils.parseEther("2.8"))) {
+      console.log("verification successful.");
+      console.log(`Total Cost for ${serviceRequest.serviceType}: ${formatEther(totalCost)} ETH`);
+      console.log(`Status is: ${status}`);
+      console.log(`Submitting bill for campaign ${campaignId}, milestone ${milestoneIndex}...`);
 
-        const billing = await escrow.submitBilling(campaignId, milestoneIndex, workerCost, requiredCost);
-        await billing.wait();
+      const billing = await escrow.submitBilling(campaignId, milestoneIndex, workerCost, requiredCost);
+      await billing.wait();
 
-        console.log('Billing submitted successfully.');
+      console.log('Billing submitted successfully.');
     } else {
-        console.log('verification failed. services do not match milestone description. Please restart.');
-        process.exit(0);
+      console.log('verification failed. services do not match milestone amount. Please restart.');
+      process.exit(0);
     }
   }
 
